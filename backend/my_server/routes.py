@@ -35,3 +35,7 @@ def register():
     return {
         "success": True
     }, 201
+
+@app.route("/api/test")
+def test(jwt):
+    return jwt
