@@ -1,3 +1,5 @@
+import { getAuthToken, hasAuthToken } from "./auth";
+
 /**
  * The base URL of the API. Ends with a slash.
  */
@@ -8,6 +10,13 @@ function getApiBase() {
 }
 
 async function apiRequest(endpoint: string, options: RequestInit) {
+    if (hasAuthToken()) {
+        if (!options) options = {};
+        if (!options.headers) options.headers = {};
+        const headers = options.headers as Record<string, string>;
+        // Set authorization to the auth token
+        headers["Authorization"] = `Bearer ${getAuthToken()}`;
+    }
     const response = await fetch(API_BASE + endpoint, options);
     return await response.json();
 }

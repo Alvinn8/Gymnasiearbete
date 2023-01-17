@@ -2,6 +2,9 @@ from functools import wraps
 from flask import request
 import jwt
 from my_server import app
+from flask_bcrypt import Bcrypt
+
+bcrypt = Bcrypt(app)
 
 # https://blog.loginradius.com/engineering/guest-post/securing-flask-api-with-jwt/
 
@@ -28,3 +31,6 @@ def decode_jwt(f):
 
         return f(data, *args, **kwargs)
     return decorated
+
+def create_jwt(dictionary):
+    return jwt.encode(dictionary, app.config["SECRET_KEY"], "HS256")

@@ -1,9 +1,11 @@
+from my_server.auth import create_jwt
+from my_server.auth import decode_jwt
 from my_server import app
 from my_server.database_handler import create_connection
+from my_server.auth import bcrypt
 from flask import request
-from flask_bcrypt import generate_password_hash
 
-@app.post("/api/register")
+@app.route("/api/register", methods=["POST"])
 def register():
     json = request.json
     username = json["username"]
@@ -23,7 +25,7 @@ def register():
             "error": "Användarnamnet är upptaget"
         }
 
-    hashed_password = generate_password_hash(password)
+    hashed_password = bcrypt.generate_password_hash(password)
 
     cur.execute(
         "INSERT INTO User (username, password) VALUES (?, ?)",
@@ -36,6 +38,50 @@ def register():
         "success": True
     }, 201
 
-@app.route("/api/test")
-def test(jwt):
-    return jwt
+@app.route("/api/login", methods=["POST"])
+def login():
+    json = request.json
+    username = json["username"]
+    password = json["password"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT (password) FROM User WHERE username = ?",
+        (username,)
+    )
+    data = cur.fetchone()
+    conn.close()
+
+    if data == None:
+        return {
+            "success": False,
+            "error": "Felaktigt användarnamn eller lösenord"
+        }
+
+    correct_password = data[0]
+    
+    if not bcrypt.check_password_hash(correct_password, password):
+        return {
+            "success": False,
+            "error": "Felaktigt användarnamn eller lösenord"
+        }
+    
+    # The username and password is correct, let's generate a JWT
+    jwt = create_jwt({
+        "username": username
+    })
+
+    return {
+        "success": True,
+        "token": jwt
+    }
+
+@app.route("/api/account/info")
+@decode_jwt
+def account_info(jwt):
+    return {
+        "success": True,
+        "username": jwt["username"]
+    }
