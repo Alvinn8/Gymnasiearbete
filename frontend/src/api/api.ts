@@ -4,7 +4,7 @@
 export const API_BASE = getApiBase();
 
 function getApiBase() {
-    return "http://localhost:8080/";
+    return "http://localhost:8080/api/";
 }
 
 async function apiRequest(endpoint: string, options: RequestInit) {
@@ -21,6 +21,9 @@ export async function apiGet(endpoint: string) {
 export async function apiPost(endpoint: string, bodyJson: object) {
     return await apiRequest(endpoint, {
         method: "POST",
-        body: JSON.stringify(bodyJson)
+        body: JSON.stringify(bodyJson),
+        headers: {
+            "Content-Type": "application/json"
+        }
     });
 }
