@@ -1,4 +1,14 @@
+import { isLoggedIn } from "@/api/auth";
 import { createRouter, createWebHistory } from "vue-router";
+
+async function requireLogin() {
+  if (!(await isLoggedIn())) {
+    // Redirect to login
+    return {
+      name: "login"
+    };
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +24,8 @@ const router = createRouter({
     {
       path: "/test",
       name: "test",
-      component: () => import("../views/TestView.vue")
+      component: () => import("../views/TestView.vue"),
+      beforeEnter: [requireLogin]
     },
     {
       path: "/register",
@@ -24,7 +35,15 @@ const router = createRouter({
     {
       path: "/login",
       name: "login",
-      component: () => import("../views/LoginView.vue")
+      component: () => import("../views/LoginView.vue"),
+      beforeEnter: async () => {
+        if (await isLoggedIn()) {
+          // The user is already logged in
+          return {
+            name: "test"
+          };
+        }
+      }
     }
   ]
 });

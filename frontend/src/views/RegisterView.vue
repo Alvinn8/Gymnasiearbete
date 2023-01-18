@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost } from "@/api/api";
+import { apiPost, handleNetworkError } from "@/api/api";
 import Swal from "sweetalert2";
 
 const username = ref<string>("");
@@ -43,10 +43,7 @@ function submit() {
         }
         loading.value = false;
     }).catch(() => {
-        Swal.fire({
-            title: "Nätverksfel",
-            icon: "error"
-        });
+        handleNetworkError();
         loading.value = false;
     });
     
@@ -73,3 +70,9 @@ function submit() {
         <button @click="submit" :disabled="!canSubmit" class="btn btn-success">Skapa konto</button>
     </div>
 </template>
+
+<style scoped>
+.container {
+    max-width: 600px;
+}
+</style>

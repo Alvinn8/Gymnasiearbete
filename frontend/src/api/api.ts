@@ -1,4 +1,5 @@
 import { getAuthToken, hasAuthToken } from "./auth";
+import Swal from "sweetalert2";
 
 /**
  * The base URL of the API. Ends with a slash.
@@ -34,5 +35,12 @@ export async function apiPost(endpoint: string, bodyJson: object) {
         headers: {
             "Content-Type": "application/json"
         }
+    });
+}
+
+export function handleNetworkError() {
+    Swal.fire({
+        title: "Nätverksfel",
+        icon: "error"
     });
 }

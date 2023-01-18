@@ -1,8 +1,6 @@
-from my_server.auth import create_jwt
-from my_server.auth import decode_jwt
 from my_server import app
 from my_server.database_handler import create_connection
-from my_server.auth import bcrypt
+from my_server.auth import bcrypt, decode_jwt, create_jwt, login_required
 from flask import request
 
 @app.route("/api/register", methods=["POST"])
@@ -84,4 +82,11 @@ def account_info(jwt):
     return {
         "success": True,
         "username": jwt["username"]
+    }
+
+@app.route("/api/test")
+@login_required
+def test():
+    return {
+        "success": True
     }

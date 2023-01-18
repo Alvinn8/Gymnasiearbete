@@ -32,5 +32,13 @@ def decode_jwt(f):
         return f(data, *args, **kwargs)
     return decorated
 
+def login_required(f):
+    @wraps(f)
+    @decode_jwt
+    def decorated(jwt, *args, **kwargs):
+        # If the jwt was decoded successfully, the user is logged in
+        return f(*args, **kwargs)
+    return decorated
+
 def create_jwt(dictionary):
     return jwt.encode(dictionary, app.config["SECRET_KEY"], "HS256")

@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { removeAuthToken } from "@/api/auth";
+import router from "@/router";
 import { RouterLink } from "vue-router";
+
+function logOut() {
+  removeAuthToken();
+  router.push({
+    name: "login"
+  });
+}
 </script>
 
 <template>
@@ -21,6 +30,7 @@ import { RouterLink } from "vue-router";
         <RouterLink to="/login">
           <button class="btn btn-info">Logga in</button>
         </RouterLink>
+        <button class="btn btn-info" @click="logOut">Logga ut</button>
       </nav>
     </div>
   </header>

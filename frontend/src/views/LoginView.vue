@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost } from "@/api/api";
-import Swal from "sweetalert2";
+import { apiPost, handleNetworkError } from "@/api/api";
 import { setAuthToken } from "@/api/auth";
+import Swal from "sweetalert2";
+import router from "@/router";
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -23,9 +24,8 @@ function submit() {
         if (json.success) {
             const token = json.token;
             setAuthToken(token);
-            Swal.fire({
-                title: "Du har loggats in",
-                icon: "success"
+            router.push({
+                name: "test"
             });
         } else {
             Swal.fire({
@@ -35,10 +35,7 @@ function submit() {
         }
         loading.value = false;
     }).catch(() => {
-        Swal.fire({
-            title: "Nätverksfel",
-            icon: "error"
-        });
+        handleNetworkError();
         loading.value = false;
     });
     
@@ -60,3 +57,9 @@ function submit() {
         <button @click="submit" :disabled="!canSubmit" class="btn btn-success">Logga in</button>
     </div>
 </template>
+
+<style scoped>
+.container {
+    max-width: 600px;
+}
+</style>
