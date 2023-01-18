@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { apiPost, handleNetworkError } from "@/api/api";
-import { setAuthToken } from "@/api/auth";
+import { getSuccessfulLoginPage, setAuthToken } from "@/api/auth";
 import Swal from "sweetalert2";
 import router from "@/router";
 
@@ -24,9 +24,7 @@ function submit() {
         if (json.success) {
             const token = json.token;
             setAuthToken(token);
-            router.push({
-                name: "test"
-            });
+            router.push(getSuccessfulLoginPage());
         } else {
             Swal.fire({
                 title: json.error,

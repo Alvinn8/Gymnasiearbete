@@ -1,14 +1,17 @@
-import { isLoggedIn } from "@/api/auth";
-import { createRouter, createWebHistory } from "vue-router";
+import { isLoggedIn, getSuccessfulLoginPage } from "@/api/auth";
+import { createRouter, createWebHistory, type NavigationGuard } from "vue-router";
 
-async function requireLogin() {
+const requireLogin: NavigationGuard = async function(to) {
   if (!(await isLoggedIn())) {
     // Redirect to login
     return {
-      name: "login"
+      name: "login",
+      query: {
+        returnUrl: to.path
+      }
     };
   }
-}
+};
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,11 +42,15 @@ const router = createRouter({
       beforeEnter: async () => {
         if (await isLoggedIn()) {
           // The user is already logged in
-          return {
-            name: "test"
-          };
+          return getSuccessfulLoginPage();
         }
       }
+    },
+    {
+      path: "/mapmaker/maps",
+      name: "maps",
+      component: () => import("../views/mapmaker/MapsView.vue"),
+      beforeEnter: [requireLogin]
     }
   ]
 });
