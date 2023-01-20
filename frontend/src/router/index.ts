@@ -51,6 +51,16 @@ const router = createRouter({
       name: "maps",
       component: () => import("../views/mapmaker/MapsView.vue"),
       beforeEnter: [requireLogin]
+    },
+    {
+      path: "/mapmaker/maps/new",
+      component: () => import("../views/mapmaker/NewMapView.vue"),
+      beforeEnter: [requireLogin]
+    },
+    {
+      path: "/mapmaker/map/:map_id",
+      component: () => import("../views/mapmaker/MapEditor.vue"),
+      name: "map"
     }
   ]
 });

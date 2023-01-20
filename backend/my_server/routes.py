@@ -1,6 +1,6 @@
 from my_server import app
-from my_server.database_handler import create_connection
-from my_server.auth import bcrypt, decode_jwt, create_jwt, login_required
+from my_server.database_handler import create_connection, db_fetch, db_fetch_all, db_fetch_one
+from my_server.auth import bcrypt, create_user_jwt, login_required
 from flask import request
 
 @app.route("/api/register", methods=["POST"])
@@ -18,6 +18,7 @@ def register():
     ).fetchone()[0]
 
     if count > 0:
+        conn.close()
         return {
             "success": False,
             "error": "Användarnamnet är upptaget"
@@ -46,7 +47,7 @@ def login():
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT (password) FROM User WHERE username = ?",
+        "SELECT id, password FROM User WHERE username = ?",
         (username,)
     )
     data = cur.fetchone()
@@ -58,7 +59,7 @@ def login():
             "error": "Felaktigt användarnamn eller lösenord"
         }
 
-    correct_password = data[0]
+    user_id, correct_password = data
     
     if not bcrypt.check_password_hash(correct_password, password):
         return {
@@ -67,9 +68,7 @@ def login():
         }
     
     # The username and password is correct, let's generate a JWT
-    jwt = create_jwt({
-        "username": username
-    })
+    jwt = create_user_jwt(user_id, username)
 
     return {
         "success": True,
@@ -77,16 +76,70 @@ def login():
     }
 
 @app.route("/api/account/info")
-@decode_jwt
+@login_required
 def account_info(jwt):
     return {
         "success": True,
-        "username": jwt["username"]
+        "username": jwt["user"]["name"]
     }
 
-@app.route("/api/test")
+@app.route("/api/map/list")
 @login_required
-def test():
+def maps(jwt):
+
+    user_id = jwt["user"]["id"]
+
+    data = db_fetch_all(
+        """
+        SELECT id, name FROM Map
+            WHERE id IN (
+                SELECT map_id FROM UserMapAccess WHERE user_id = ?
+            )
+        """,
+        (user_id,)
+    )
+
+    maps = []
+    for map in data:
+        maps.append({
+            "id": map[0],
+            "name": map[1]
+        })
+
     return {
-        "success": True
+        "success": True,
+        "maps": maps
+    }
+
+@app.route("/api/map/new", methods=["POST"])
+@login_required
+def new_map(jwt):
+    map_name = request.json["name"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO Map (name) VALUES (?)",
+        (map_name,)
+    )
+    map_id = cur.lastrowid
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "id": map_id
+    }
+
+@app.route("/api/map/:map_id/info")
+@login_required
+def map_info(jwt, map_id):
+    name = db_fetch_one(
+        "SELECT name FROM Map WHERE id = ?",
+        (map_id,)
+    )[0]
+
+    return {
+        "name": name
     }

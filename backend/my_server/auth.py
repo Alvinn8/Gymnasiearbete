@@ -8,7 +8,7 @@ bcrypt = Bcrypt(app)
 
 # https://blog.loginradius.com/engineering/guest-post/securing-flask-api-with-jwt/
 
-def decode_jwt(f):
+def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not "Authorization" in request.headers:
@@ -32,13 +32,13 @@ def decode_jwt(f):
         return f(data, *args, **kwargs)
     return decorated
 
-def login_required(f):
-    @wraps(f)
-    @decode_jwt
-    def decorated(jwt, *args, **kwargs):
-        # If the jwt was decoded successfully, the user is logged in
-        return f(*args, **kwargs)
-    return decorated
-
 def create_jwt(dictionary):
     return jwt.encode(dictionary, app.config["SECRET_KEY"], "HS256")
+
+def create_user_jwt(user_id, username):
+    return create_jwt({
+        "user": {
+            "id": user_id,
+            "name": username
+        }
+    })
