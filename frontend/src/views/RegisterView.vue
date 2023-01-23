@@ -2,6 +2,8 @@
 import { computed, ref } from "vue";
 import { apiPost, errorHandler } from "@/api/api";
 import Swal from "sweetalert2";
+import router from "@/router";
+import { getSuccessfulLoginPage } from "@/api/auth";
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -30,10 +32,7 @@ async function submit() {
         username: username.value,
         password: password.value
     }).then(() => {
-        Swal.fire({
-            title: "Kontot har skapats",
-            icon: "success"
-        });
+        router.push(getSuccessfulLoginPage());
     }).catch(errorHandler([
         [json => !json.success, (json: any) => Swal.fire({
             title: json.error,
