@@ -1,9 +1,11 @@
 import { apiGet, errorHandler } from "@/api/api";
-import { isLoggedIn, getSuccessfulLoginPage } from "@/api/auth";
+import { getSuccessfulLoginPage } from "@/api/auth";
+import { useAuth } from "@/stores/auth";
 import { createRouter, createWebHistory, type NavigationGuard } from "vue-router";
 
-const requireLogin: NavigationGuard = async function(to) {
-    if (!(await isLoggedIn())) {
+const requireLogin: NavigationGuard = function(to) {
+    const auth = useAuth();
+    if (!auth.isLoggedIn) {
         // Redirect to login
         return {
             name: "login",
@@ -58,8 +60,9 @@ const router = createRouter({
             path: "/login",
             name: "login",
             component: () => import("../views/LoginView.vue"),
-            beforeEnter: async () => {
-                if (await isLoggedIn()) {
+            beforeEnter: () => {
+                const auth = useAuth();
+                if (auth.isLoggedIn) {
                     // The user is already logged in
                     return getSuccessfulLoginPage();
                 }

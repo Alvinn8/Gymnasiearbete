@@ -32,6 +32,7 @@ async function submit() {
         const token = json.token;
         const auth = useAuth();
         auth.authToken = token;
+        await auth.validateAuthToken();
         router.push(getSuccessfulLoginPage());
     }
 }

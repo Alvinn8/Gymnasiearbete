@@ -35,5 +35,5 @@ export const useAuth = defineStore("auth_token", () => {
         }
     }
 
-    return { authToken, isLoggedIn };
+    return { authToken, isLoggedIn, validateAuthToken };
 });
