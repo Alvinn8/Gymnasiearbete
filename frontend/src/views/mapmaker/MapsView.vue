@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { apiGet, handleNetworkError } from "@/api/api";
+import { apiGet, handleError } from "@/api/api";
 import { ref } from "vue";
 
 interface Map {
@@ -11,7 +11,7 @@ const data = ref<Map[] | null>(null);
 
 async function fetchData() {
     const data2 = await apiGet("map/list")
-        .catch(handleNetworkError);
+        .catch(handleError);
     data.value = data2.maps;
 }
 fetchData();

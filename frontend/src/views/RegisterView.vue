@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost, handleNetworkError } from "@/api/api";
+import { apiPost, errorHandler } from "@/api/api";
 import Swal from "sweetalert2";
 
 const username = ref<string>("");
@@ -15,7 +15,7 @@ const canSubmit = computed(() => {
         && confirmPassword.value.length > 0;
 });
 
-function submit() {
+async function submit() {
     if (password.value != confirmPassword.value) {
         Swal.fire({
             title: "Felaktigt bekräftat lösenord",
@@ -26,26 +26,21 @@ function submit() {
     }
 
     loading.value = true;
-    apiPost("register", {
+    await apiPost("register", {
         username: username.value,
         password: password.value
-    }).then(json => {
-        if (json.success) {
-            Swal.fire({
-                title: "Kontot har skapats",
-                icon: "success"
-            });
-        } else {
-            Swal.fire({
-                title: json.error,
-                icon: "error"
-            });
-        }
-        loading.value = false;
-    }).catch(() => {
-        handleNetworkError();
-        loading.value = false;
-    });
+    }).then(() => {
+        Swal.fire({
+            title: "Kontot har skapats",
+            icon: "success"
+        });
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            title: json.error,
+            icon: "error"
+        })]
+    ]));
+    loading.value = false;
     
 }
 

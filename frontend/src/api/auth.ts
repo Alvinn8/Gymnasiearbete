@@ -1,5 +1,5 @@
 import router from "@/router";
-import { apiGet, handleNetworkError } from "./api";
+import { apiGet, handleError, HttpStatusError } from "./api";
 
 const ITEM_KEY = "mapmaker.auth_token";
 
@@ -34,10 +34,13 @@ export async function isLoggedIn() {
     try {
         const json = await apiGet("account/info");
         return json.success as boolean;
-    } catch {
-        handleNetworkError();
+    } catch (e) {
+        if (!(e instanceof HttpStatusError) || e.response.status !== 401) {
+            handleError(e);
+        }
         return false;
     }
+
 }
 
 /**

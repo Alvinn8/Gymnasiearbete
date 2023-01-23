@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { apiPost, handleNetworkError } from "@/api/api";
+import { apiPost, handleError } from "@/api/api";
 import router from "@/router";
 import { computed, ref } from "vue";
 
@@ -13,7 +13,7 @@ async function submit() {
     const response = await apiPost("map/new", {
             name: name.value
         })
-        .catch(handleNetworkError);
+        .catch(handleError);
     router.push({
         name: "map",
         params: {

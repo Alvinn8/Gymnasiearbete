@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost, handleNetworkError } from "@/api/api";
+import { apiPost, errorHandler } from "@/api/api";
 import { getSuccessfulLoginPage, setAuthToken } from "@/api/auth";
 import Swal from "sweetalert2";
 import router from "@/router";
@@ -15,28 +15,23 @@ const canSubmit = computed(() => {
         && password.value.length > 0;
 });
 
-function submit() {
+async function submit() {
     loading.value = true;
-    apiPost("login", {
+    const json = await apiPost("login", {
         username: username.value,
         password: password.value
-    }).then(json => {
-        if (json.success) {
-            const token = json.token;
-            setAuthToken(token);
-            router.push(getSuccessfulLoginPage());
-        } else {
-            Swal.fire({
-                title: json.error,
-                icon: "error"
-            });
-        }
-        loading.value = false;
-    }).catch(() => {
-        handleNetworkError();
-        loading.value = false;
-    });
-    
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            title: json.error,
+            icon: "error"
+        })]
+    ]));
+    loading.value = false;
+    if (json) {
+        const token = json.token;
+        setAuthToken(token);
+        router.push(getSuccessfulLoginPage());
+    }
 }
 
 </script>

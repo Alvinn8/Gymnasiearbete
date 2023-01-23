@@ -132,14 +132,32 @@ def new_map(jwt):
         "id": map_id
     }
 
-@app.route("/api/map/:map_id/info")
+@app.route("/api/map/<map_id>/info")
 @login_required
 def map_info(jwt, map_id):
-    name = db_fetch_one(
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    data = cur.execute(
         "SELECT name FROM Map WHERE id = ?",
         (map_id,)
-    )[0]
+    ).fetchone()
+
+    accessCount = cur.execute(
+        "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
+        [jwt["user"]["id"], map_id]
+    ).fetchone()[0]
+
+    conn.close()
+
+    if data is None or not accessCount > 0:
+        return {
+            "success": False,
+            "error": "Kunde inte hitta kartan"
+        }
 
     return {
-        "name": name
+        "success": True,
+        "name": data[0]
     }
