@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { apiPost, errorHandler } from "@/api/api";
-import { getSuccessfulLoginPage, setAuthToken } from "@/api/auth";
+import { getSuccessfulLoginPage } from "@/api/auth";
 import Swal from "sweetalert2";
 import router from "@/router";
+import { useAuth } from "@/stores/auth";
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -29,7 +30,8 @@ async function submit() {
     loading.value = false;
     if (json) {
         const token = json.token;
-        setAuthToken(token);
+        const auth = useAuth();
+        auth.authToken = token;
         router.push(getSuccessfulLoginPage());
     }
 }

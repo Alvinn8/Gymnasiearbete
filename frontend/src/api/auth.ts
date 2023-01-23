@@ -3,18 +3,22 @@ import { apiGet, handleError, HttpStatusError } from "./api";
 
 const ITEM_KEY = "mapmaker.auth_token";
 
+/** @deprecated */
 export function hasAuthToken() {
     return getAuthToken() != null;
 }
 
+/** @deprecated */
 export function getAuthToken() {
     return localStorage.getItem(ITEM_KEY);
 }
 
+/** @deprecated */
 export function setAuthToken(token: string) {
     localStorage.setItem(ITEM_KEY, token);
 }
 
+/** @deprecated */
 export function removeAuthToken() {
     localStorage.removeItem(ITEM_KEY);
 }
@@ -26,6 +30,7 @@ export function removeAuthToken() {
  * have its value cached.
  * 
  * @returns 
+ * @deprecated
  */
 export async function isLoggedIn() {
     if (!hasAuthToken()) return false;

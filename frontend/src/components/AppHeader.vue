@@ -1,37 +1,48 @@
 <script setup lang="ts">
-import { removeAuthToken } from "@/api/auth";
 import router from "@/router";
+import { useAuth } from "@/stores/auth";
 import { RouterLink } from "vue-router";
 
+const auth = useAuth();
+
 function logOut() {
-  removeAuthToken();
-  router.push({
-    name: "login"
-  });
+    const auth = useAuth();
+    auth.authToken = null;
+    router.push({
+        name: "login"
+    });
 }
 </script>
 
 <template>
-  <header>
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">
-          <button class="btn btn-info">Home</button>
-        </RouterLink>
-        <RouterLink to="/about">
-          <button class="btn btn-info">About</button>
-        </RouterLink>
-        <RouterLink to="/test">
-          <button class="btn btn-info">Test</button>
-        </RouterLink>
-        <RouterLink to="/register">
-          <button class="btn btn-info">Skapa konto</button>
-        </RouterLink>
-        <RouterLink to="/login">
-          <button class="btn btn-info">Logga in</button>
-        </RouterLink>
-        <button class="btn btn-info" @click="logOut">Logga ut</button>
-      </nav>
-    </div>
-  </header>
+    <header>
+        <nav class="navbar bg-primary navbar-expand-sm" data-bs-theme="dark">
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-content"
+                aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbar-content">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <RouterLink to="/" class="nav-link" active-class="active">Home</RouterLink>
+                    </li>
+                    <li class="nav-item">
+                        <RouterLink to="/test" class="nav-link" active-class="active">Test</RouterLink>
+                    </li>
+                    <li class="nav-item" v-if="!auth.isLoggedIn">
+                        <RouterLink to="/register" class="nav-link" active-class="active">Skapa konto</RouterLink>
+                    </li>
+                    <li class="nav-item" v-if="!auth.isLoggedIn">
+                        <RouterLink to="/login" class="nav-link" active-class="active">Logga in</RouterLink>
+                    </li>
+                    <li class="nav-item" v-if="auth.isLoggedIn">
+                        <RouterLink to="/mapmaker/maps" class="nav-link" active-class="active">Mina Kartor</RouterLink>
+                    </li>
+                    <li class="nav-item" v-if="auth.isLoggedIn">
+                        <a @click.prevent="logOut" href="#" class="nav-link">Logga ut</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
 </template>

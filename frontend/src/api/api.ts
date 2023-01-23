@@ -1,5 +1,5 @@
-import { getAuthToken, hasAuthToken } from "./auth";
 import Swal from "sweetalert2";
+import { useAuth } from "@/stores/auth";
 
 /**
  * The base URL of the API. Ends with a slash.
@@ -51,12 +51,13 @@ export class ApiResponseError extends Error {
 }
 
 async function apiRequest(endpoint: string, options: RequestInit) {
-    if (hasAuthToken()) {
+    const auth = useAuth();
+    if (auth.authToken) {
         if (!options) options = {};
         if (!options.headers) options.headers = {};
         const headers = options.headers as Record<string, string>;
         // Set authorization to the auth token
-        headers["Authorization"] = `Bearer ${getAuthToken()}`;
+        headers["Authorization"] = `Bearer ${auth.authToken}`;
     }
     let response: Response;
     try {
@@ -90,6 +91,12 @@ export async function apiPost(endpoint: string, bodyJson: object) {
         headers: {
             "Content-Type": "application/json"
         }
+    });
+}
+
+export async function apiDelete(endpoint: string) {
+    return await apiRequest(endpoint, {
+        method: "DELETE"
     });
 }
 

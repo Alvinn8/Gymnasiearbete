@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { apiGet, errorHandler } from "@/api/api";
+import { apiGet, apiDelete, errorHandler } from "@/api/api";
 import { useRoute } from "vue-router";
 import { ref, watch } from "vue";
 import Swal from "sweetalert2";
+import router from "@/router";
 
 const route = useRoute();
 const name = ref<string>("");
@@ -24,8 +25,27 @@ watch(
     { immediate: true }
 );
 
+async function deleteMap() {
+    const result = await Swal.fire({
+        title: "Är du säker?",
+        showCancelButton: true,
+        cancelButtonText: "Avbryt",
+        confirmButtonText: "Radera",
+        confirmButtonColor: "red"
+    });
+    if (!result.isConfirmed) {
+        return;
+    }
+    const mapId = route.params.map_id;
+    await apiDelete(`map/${mapId}`);
+    router.push({
+        name: "maps"
+    });
+}
+
 </script>
 
 <template>
     <h1>{{ name }}</h1>
+    <button class="btn btn-danger" @click="deleteMap">Radera karta</button>
 </template>

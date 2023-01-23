@@ -125,11 +125,56 @@ def new_map(jwt):
     )
     map_id = cur.lastrowid
 
+    cur.execute(
+        "INSERT INTO UserMapAccess (map_id, user_id) VALUES (?, ?)",
+        (map_id, jwt["user"]["id"])
+    )
+
     conn.commit()
     conn.close()
 
     return {
         "id": map_id
+    }
+
+@app.route("/api/map/<map_id>", methods=["DELETE"])
+@login_required
+def delete_map(jwt, map_id):
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    count = cur.execute(
+        "SELECT COUNT(*) FROM UserMapAccess WHERE map_id = ? AND user_id = ?",
+        (map_id, jwt["user"]["id"])
+    ).fetchone()[0]
+
+    if not count > 0:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Insufficent access to the specified map."
+        }, 403
+    
+    # We must delete all related rows too
+
+    cur.execute(
+        "DELETE FROM UserMapAccess WHERE map_id = ?",
+        (map_id,)
+    )
+
+    # Delete the map
+
+    cur.execute(
+        "DELETE FROM Map WHERE id = ?",
+        (map_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
     }
 
 @app.route("/api/map/<map_id>/info")
