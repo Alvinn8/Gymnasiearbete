@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost, errorHandler } from "@/api/api";
+import { apiGet, apiPost, errorHandler, handleError } from "@/api/api";
 import { getSuccessfulLoginPage } from "@/api/auth";
 import Swal from "sweetalert2";
 import router from "@/router";
@@ -37,11 +37,20 @@ async function submit() {
     }
 }
 
+async function loginWithGoogle() {
+    const result = await apiGet("login/google").catch(handleError);
+    // TODO store "state" in localstorage or in the jwt?
+    location.href = result.redirect_url;
+}
+
 </script>
 
 <template>
     <div class="container">
         <h1>Logga in som kartskapare</h1>
+        <div class="mb-3">
+            <button class="btn btn-primary" @click="loginWithGoogle">Logga in med Google</button>
+        </div>
         <div class="mb-3">
             <label for="username" class="form-label">Användarnamn</label>
             <input type="text" v-model="username" class="form-control" id="username">

@@ -1,7 +1,9 @@
 from my_server import app
 from my_server.database_handler import create_connection, db_fetch, db_fetch_all, db_fetch_one
 from my_server.auth import bcrypt, create_user_jwt, login_required
+from my_server.oauth_google import create_authorize_url
 from flask import request
+import os
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -73,6 +75,19 @@ def login():
     return {
         "success": True,
         "token": jwt
+    }
+
+@app.route("/api/login/google")
+def login_google():
+
+    state = os.urandom(32).hex()
+
+    redirect_url = create_authorize_url(state)
+
+    return {
+        "success": True,
+        "redirect_url": redirect_url,
+        "state": state
     }
 
 @app.route("/api/account/info")

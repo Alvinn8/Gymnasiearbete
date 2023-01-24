@@ -68,6 +68,12 @@ const router = createRouter({
                 }
             }
         },
+        // {
+        //     path: "/login/google/callback",
+        //     beforeEnter: (from) => {
+        //         console.log(from.fullPath);
+        //     }
+        // },
         {
             path: "/mapmaker/maps",
             name: "maps",
