@@ -81,7 +81,6 @@ def login():
 def login_google():
 
     state = os.urandom(32).hex()
-
     redirect_url = create_authorize_url(state)
 
     return {
@@ -89,6 +88,10 @@ def login_google():
         "redirect_url": redirect_url,
         "state": state
     }
+
+@app.route("/api/login/google/callback")
+def login_google_callback():
+    pass
 
 @app.route("/api/account/info")
 @login_required

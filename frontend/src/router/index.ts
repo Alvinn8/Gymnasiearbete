@@ -68,12 +68,10 @@ const router = createRouter({
                 }
             }
         },
-        // {
-        //     path: "/login/google/callback",
-        //     beforeEnter: (from) => {
-        //         console.log(from.fullPath);
-        //     }
-        // },
+        {
+            path: "/login/google/callback",
+            component: () => import("../views/GoogleLogin.vue")
+        },
         {
             path: "/mapmaker/maps",
             name: "maps",
