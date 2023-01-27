@@ -4,6 +4,8 @@ import { useRoute } from "vue-router";
 import { ref, watch } from "vue";
 import Swal from "sweetalert2";
 import router from "@/router";
+import PanZoom from "@/components/PanZoom.vue";
+import EditableWall from "@/components/editor/EditableWall.vue";
 
 const route = useRoute();
 const name = ref<string>("");
@@ -48,4 +50,18 @@ async function deleteMap() {
 <template>
     <h1>{{ name }}</h1>
     <button class="btn btn-danger" @click="deleteMap">Radera karta</button>
+    <div class="container-fluid">
+        <PanZoom>
+            <p>Hello!</p>
+            <EditableWall />
+        </PanZoom>
+    </div>
 </template>
+
+<style scoped>
+.container-fluid {
+    overflow: hidden;
+    border: 2px solid #ddd;
+    height: 85vh;
+}
+</style>
