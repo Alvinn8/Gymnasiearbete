@@ -1,2 +1,2 @@
 ## Installation
-`pip install flask flask_bcrypt flask_cors pyjwt`
+`pip install flask flask_bcrypt flask_cors pyjwt requests`

@@ -39,7 +39,7 @@ async function submit() {
 
 async function loginWithGoogle() {
     const result = await apiGet("login/google").catch(handleError);
-    // TODO store "state" in localstorage or in the jwt?
+    localStorage.setItem("mapmaker.ouath_token", result.state);
     location.href = result.redirect_url;
 }
 

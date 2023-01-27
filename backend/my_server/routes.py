@@ -1,7 +1,7 @@
 from my_server import app
 from my_server.database_handler import create_connection, db_fetch, db_fetch_all, db_fetch_one
 from my_server.auth import bcrypt, create_user_jwt, login_required
-from my_server.oauth_google import create_authorize_url
+from my_server.oauth_google import create_authorize_url, verify_google_token
 from flask import request
 import os
 
@@ -89,9 +89,39 @@ def login_google():
         "state": state
     }
 
-@app.route("/api/login/google/callback")
+@app.route("/api/login/google/callback", methods=["POST"])
 def login_google_callback():
-    pass
+    data = request.json
+    code = data["code"]
+
+    google_account_id, error = verify_google_token(code)
+    if error is not None:
+        return error
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id, username FROM User WHERE google_account_id = ?",
+        (google_account_id,)
+    )
+    data = cur.fetchone()
+    conn.close()
+
+    if data == None:
+        return {
+            "success": False,
+            "error": "Det finns inget konto kopplat till detta Google-konto"
+        }
+    
+    user_id, username = data
+
+    jwt = create_user_jwt(user_id, username)
+
+    return {
+        "success": True,
+        "token": jwt
+    }
 
 @app.route("/api/account/info")
 @login_required
