@@ -23,7 +23,9 @@ onMounted(async () => {
     }
     localStorage.removeItem("mapmaker.ouath_token");
 
-    const json = await apiPost("login/google/callback", { code })
+    const action = state.startsWith("register-") ? "register" : "login";
+
+    const json = await apiPost("login/google/callback", { code, action })
         .catch(errorHandler([
             [json => !json.success, (json: any) => Swal.fire({
                 title: json.error,

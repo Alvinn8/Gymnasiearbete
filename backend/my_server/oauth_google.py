@@ -43,13 +43,15 @@ def verify_google_token(code):
     }
     result = requests.post(TOKEN_URL, data=params).json()
     if "error" in result:
-        return (None, {
+        return ({
             "success": False,
             "error": "Försök igen"
-        })
+        }, None, None)
     id_token = result["id_token"]
     data_string = id_token.split(".")[1]
     data_string = base64.b64decode(data_string)
     data = json.loads(data_string)
+    print(data)
     google_account_id = data["sub"]
-    return (google_account_id, None)
+    email = data["email"]
+    return (None, google_account_id, email)

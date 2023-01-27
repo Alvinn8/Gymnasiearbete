@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { apiPost, errorHandler } from "@/api/api";
+import { apiGet, apiPost, errorHandler, handleError } from "@/api/api";
 import Swal from "sweetalert2";
 import router from "@/router";
 import { getSuccessfulLoginPage } from "@/api/auth";
@@ -43,12 +43,21 @@ async function submit() {
     
 }
 
+async function registerWithGoogle() {
+    const result = await apiGet("register/google").catch(handleError);
+    localStorage.setItem("mapmaker.ouath_token", result.state);
+    location.href = result.redirect_url;
+}
+
 </script>
 
 <template>
     <div class="container">
         <h1>Skapa konto som kartskapare</h1>
         <p>Som kartskapare kan du skapa och redigera kartor.</p>
+        <div class="mb-3">
+            <button class="btn btn-primary" @click="registerWithGoogle">Skapa konto med Google</button>
+        </div>
         <div class="mb-3">
             <label for="username" class="form-label">Användarnamn</label>
             <input type="text" v-model="username" class="form-control" id="username">

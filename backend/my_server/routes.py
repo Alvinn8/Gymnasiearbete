@@ -1,8 +1,8 @@
 from my_server import app
-from my_server.database_handler import create_connection, db_fetch, db_fetch_all, db_fetch_one
+from my_server.database_handler import create_connection, db_fetch_all
 from my_server.auth import bcrypt, create_user_jwt, login_required
 from my_server.oauth_google import create_authorize_url, verify_google_token
-from flask import request
+from flask import request, abort
 import os
 
 @app.route("/api/register", methods=["POST"])
@@ -77,10 +77,22 @@ def login():
         "token": jwt
     }
 
+@app.route("/api/register/google")
+def register_google():
+
+    state = "register-" + os.urandom(32).hex()
+    redirect_url = create_authorize_url(state)
+
+    return {
+        "success": True,
+        "redirect_url": redirect_url,
+        "state": state
+    }
+
 @app.route("/api/login/google")
 def login_google():
 
-    state = os.urandom(32).hex()
+    state = "login-" + os.urandom(32).hex()
     redirect_url = create_authorize_url(state)
 
     return {
@@ -93,35 +105,89 @@ def login_google():
 def login_google_callback():
     data = request.json
     code = data["code"]
+    action = data["action"]
 
-    google_account_id, error = verify_google_token(code)
-    if error is not None:
-        return error
+    if action == "login":
 
-    conn = create_connection()
-    cur = conn.cursor()
+        error, google_account_id, _ = verify_google_token(code)
+        if error is not None:
+            return error
 
-    cur.execute(
-        "SELECT id, username FROM User WHERE google_account_id = ?",
-        (google_account_id,)
-    )
-    data = cur.fetchone()
-    conn.close()
+        conn = create_connection()
+        cur = conn.cursor()
 
-    if data == None:
+        cur.execute(
+            "SELECT id, username FROM User WHERE google_account_id = ?",
+            (google_account_id,)
+        )
+        data = cur.fetchone()
+        conn.close()
+
+        if data == None:
+            return {
+                "success": False,
+                "error": "Det finns inget konto kopplat till detta Google-konto"
+            }
+        
+        user_id, username = data
+
+        jwt = create_user_jwt(user_id, username)
+
         return {
-            "success": False,
-            "error": "Det finns inget konto kopplat till detta Google-konto"
+            "success": True,
+            "token": jwt
         }
-    
-    user_id, username = data
 
-    jwt = create_user_jwt(user_id, username)
+    elif action == "register":
+        
+        error, google_account_id, email = verify_google_token(code)
+        if error is not None:
+            return error
 
-    return {
-        "success": True,
-        "token": jwt
-    }
+        username = email
+
+        conn = create_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT COUNT(*) FROM User WHERE google_account_id = ?",
+            (google_account_id,)
+        )
+        already_has_account = cur.fetchone()[0] > 0
+
+        if already_has_account:
+            conn.close()
+            return {
+                "success": False,
+                "error": "Det finns redan ett konto för detta Google konto. Menade du att logga in?"
+            }
+        
+        cur.execute(
+            "SELECT COUNT(*) FROM User WHERE username = ?",
+            (username,)
+        )
+        username_taken = cur.fetchone()[0] > 0
+
+        if username_taken:
+            username = username + "-" + os.urandom(16).hex()
+        
+        cur.execute(
+            "INSERT INTO User (username, google_account_id) VALUES (?, ?)",
+            (username, google_account_id)
+        )
+        user_id = cur.lastrowid
+        conn.commit()
+        conn.close()
+
+        jwt = create_user_jwt(user_id, username)
+
+        return {
+            "success": True,
+            "token": jwt
+        }
+
+    else:
+        abort(400)
 
 @app.route("/api/account/info")
 @login_required
