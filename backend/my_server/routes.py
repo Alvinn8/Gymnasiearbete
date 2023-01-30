@@ -298,10 +298,15 @@ def map_info(jwt, map_id):
     conn = create_connection()
     cur = conn.cursor()
 
-    data = cur.execute(
+    nameData = cur.execute(
         "SELECT name FROM Map WHERE id = ?",
         (map_id,)
     ).fetchone()
+
+    mapPartsData = cur.execute(
+        "SELECT id, name FROM MapPart WHERE map_id = ?",
+        (map_id,)
+    ).fetchall()
 
     accessCount = cur.execute(
         "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
@@ -310,13 +315,57 @@ def map_info(jwt, map_id):
 
     conn.close()
 
-    if data is None or not accessCount > 0:
+    if nameData is None or not accessCount > 0:
         return {
             "success": False,
             "error": "Kunde inte hitta kartan"
         }
+    
+    mapParts = []
+    for mapPartData in mapPartsData:
+        mapParts.append({
+            "id": mapPartData[0],
+            "name": mapPartData[1]
+        })
 
     return {
         "success": True,
-        "name": data[0]
+        "data": {
+            "name": nameData[0],
+            "mapParts": mapParts
+        }
+    }
+
+@app.route("/api/map/<map_id>/part/new")
+@login_required
+def new_map_part(jwt, map_id):
+
+    name = request.json["name"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    accessCount = cur.execute(
+        "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
+        [jwt["user"]["id"], map_id]
+    ).fetchone()[0]
+
+    if not accessCount > 0:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Kunde inte hitta kartan"
+        }
+    
+    cur.execute(
+        "INSERT INTO MapPart (name, map_id) VALUES (?, ?)",
+        (name, map_id)
+    )
+    id = cur.lastrowid
+
+    conn.close()
+
+    return {
+        "success": True,
+        "id": id
     }
