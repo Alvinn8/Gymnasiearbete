@@ -23,7 +23,7 @@ export const useAuth = defineStore("auth_token", () => {
     );
     
     async function validateAuthToken() {
-    // Fetch the account info endpoint to check if logged in
+        // Fetch the account info endpoint to check if logged in
         try {
             const json = await apiGet("account/info");
             isLoggedIn.value = json.success;

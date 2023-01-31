@@ -1,6 +1,6 @@
 from my_server import app
 from my_server.database_handler import create_connection, db_fetch_all
-from my_server.auth import bcrypt, create_user_jwt, login_required
+from my_server.auth import bcrypt, create_user_jwt, login_required, map_access_required, map_part_required
 from my_server.oauth_google import create_authorize_url, verify_google_token
 from flask import request, abort
 import os
@@ -292,7 +292,7 @@ def delete_map(jwt, map_id):
     }
 
 @app.route("/api/map/<map_id>/info")
-@login_required
+@map_access_required
 def map_info(jwt, map_id):
 
     conn = create_connection()
@@ -308,19 +308,8 @@ def map_info(jwt, map_id):
         (map_id,)
     ).fetchall()
 
-    accessCount = cur.execute(
-        "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
-        [jwt["user"]["id"], map_id]
-    ).fetchone()[0]
-
     conn.close()
 
-    if nameData is None or not accessCount > 0:
-        return {
-            "success": False,
-            "error": "Kunde inte hitta kartan"
-        }
-    
     mapParts = []
     for mapPartData in mapPartsData:
         mapParts.append({
@@ -336,8 +325,8 @@ def map_info(jwt, map_id):
         }
     }
 
-@app.route("/api/map/<map_id>/part/new")
-@login_required
+@app.route("/api/map/<map_id>/part/new", methods=["POST"])
+@map_access_required
 def new_map_part(jwt, map_id):
 
     name = request.json["name"]
@@ -345,27 +334,45 @@ def new_map_part(jwt, map_id):
     conn = create_connection()
     cur = conn.cursor()
 
-    accessCount = cur.execute(
-        "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
-        [jwt["user"]["id"], map_id]
-    ).fetchone()[0]
-
-    if not accessCount > 0:
-        conn.close()
-        return {
-            "success": False,
-            "error": "Kunde inte hitta kartan"
-        }
-    
     cur.execute(
         "INSERT INTO MapPart (name, map_id) VALUES (?, ?)",
         (name, map_id)
     )
     id = cur.lastrowid
 
+    conn.commit()
     conn.close()
 
     return {
         "success": True,
         "id": id
+    }
+
+@app.route("/api/map/<map_id>/part/<part_id>/info")
+@map_part_required
+def map_part_info(jwt, map_id, part_id):
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    wallsData = cur.execute(
+        "SELECT id, x, y, width, height FROM Wall WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
+    conn.close()
+
+    walls = []
+    for wallData in wallsData:
+        walls.append({
+            "id": wallData[0],
+            "x": wallData[1],
+            "y": wallData[2],
+            "width": wallData[3],
+            "height": wallData[4]
+        })
+
+    return {
+        "success": False,
+        "walls": walls
     }

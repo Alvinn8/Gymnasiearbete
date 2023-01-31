@@ -7,14 +7,24 @@ import router from "@/router";
 import PanZoom from "@/components/PanZoom.vue";
 import EditableWall from "@/components/editor/EditableWall.vue";
 
-interface MapPart {
-    id: number;
-    name: string;
-}
-
 interface Data {
     name: string;
-    mapParts: MapPart[];
+    mapParts: {
+        id: number;
+        name: string;
+    }[];
+}
+
+interface Wall {
+    id: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+interface MapPartData {
+    walls: Wall[];
 }
 
 const route = useRoute();
@@ -23,6 +33,9 @@ const data = reactive<Data>({
     mapParts: []
 });
 const currentMapPartId = ref<number | null>(null);
+const mapPartData = reactive<MapPartData>({
+    walls: []
+});
 
 watch(
     () => route.params.map_id,
@@ -34,13 +47,21 @@ watch(
                     icon: "error"
                 })]
             ]));
-        if (info) {
-            data.name = info.data.name;
-            data.mapParts = info.data.mapParts;
-        }
+        if (!info) return;
+
+        data.name = info.data.name;
+        data.mapParts = info.data.mapParts;
     },
     { immediate: true }
 );
+
+watch(currentMapPartId, async () => {
+    const info = await apiGet(`map/${route.params.map_id}/part/${currentMapPartId.value}/info`)
+        .catch(handleError);
+    if (!info) return;
+
+    mapPartData.walls = info.walls;
+});
 
 async function deleteMap() {
     const result = await Swal.fire({
@@ -95,11 +116,11 @@ async function newPart() {
         <div class="row">
             <div class="col part">
                 <div v-if="data && data.mapParts.length > 0">
-                    <p>Nuvarande kartdel: {{ data?.mapParts.find(part => part.id === currentMapPartId)?.name }}</p>
+                    <p>Nuvarande kartdel: {{ data.mapParts.find(part => part.id === currentMapPartId)?.name }}</p>
                     <select class="form-select" v-model="currentMapPartId">
-                        <option v-for="mapPart of data?.mapParts" :key="mapPart.id" value="mapPart.id">{{
-                            mapPart.name
-                        }}</option>
+                        <option v-for="mapPart of data.mapParts" :key="mapPart.id" :value="mapPart.id">
+                            {{ mapPart.name }}
+                        </option>
                     </select>
                 </div>
                 <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
@@ -111,8 +132,13 @@ async function newPart() {
     </div>
     <div class="container-fluid">
         <PanZoom>
-            <p>Hello!</p>
-            <EditableWall />
+            <div v-if="!mapPartData">
+                <p>Vänligen välj kartdel.</p>
+            </div>
+            <div v-if="mapPartData">
+
+                <EditableWall />
+            </div>
         </PanZoom>
     </div>
 </template>
