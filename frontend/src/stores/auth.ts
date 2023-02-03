@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { apiGet, handleError, HttpStatusError } from "@/api/api";
 
@@ -6,8 +6,9 @@ const ITEM_KEY = "mapmaker.auth_token";
 
 export const useAuth = defineStore("auth_token", () => {
     const authToken = ref<string | null>(localStorage.getItem(ITEM_KEY));
-    const isLoggedIn = ref(false);
-    validateAuthToken();
+    const isLoggedIn = ref(true); // TODO false
+
+    onMounted(validateAuthToken);
 
     watch(
         authToken,
