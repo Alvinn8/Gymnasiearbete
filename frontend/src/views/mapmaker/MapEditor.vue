@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import router from "@/router";
 import PanZoom from "@/components/PanZoom.vue";
 import EditableWall from "@/components/editor/EditableWall.vue";
+import ChangeBackground from "@/components/ChangeBackground.vue";
 
 interface Data {
     name: string;
@@ -38,7 +39,6 @@ const mapPartData = reactive<MapPartData>({
     walls: null,
     background: null
 });
-const fileInput = ref<HTMLInputElement | null>(null);
 
 watch(
     () => route.params.map_id,
@@ -116,32 +116,6 @@ async function newPart() {
     }
 }
 
-async function changeBackground() {
-    if (!fileInput.value?.files) return;
-
-    const file = fileInput.value?.files[0];
-    if (!file) return;
-
-    const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = () => {
-            const url = reader.result;
-            if (typeof url !== "string") {
-                reject();
-                return;
-            }
-            resolve(url);
-        };
-    });
-
-    await apiPost(`map/${route.params.map_id}/part/${currentMapPartId.value}/background`, {
-        file: base64
-    });
-
-    mapPartData.background = base64;
-}
-
 async function newWall() {
     if (!mapPartData.walls) return;
 
@@ -188,11 +162,16 @@ function appendChange(change: Change) {
 
 <template>
     <div class="container">
-        <h1>{{ data?.name }}</h1>
         <div class="row">
+            <div class="col">
+                <h1>{{ data?.name }}</h1>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary m-1">Dela karta</button>
+                <button class="btn btn-danger m-1" @click="deleteMap">Radera karta</button>
+            </div>
             <div class="col part">
                 <div v-if="data && data.mapParts.length > 0">
-                    <p>Nuvarande kartdel: {{ data.mapParts.find(part => part.id === currentMapPartId)?.name }}</p>
                     <select class="form-select" v-model="currentMapPartId">
                         <option v-for="mapPart of data.mapParts" :key="mapPart.id" :value="mapPart.id">
                             {{ mapPart.name }}
@@ -205,12 +184,7 @@ function appendChange(change: Change) {
                 <button class="btn btn-success" @click="newWall">Ny vägg</button>
             </div>
             <div class="col">
-                <p>Ändra bakgrundsbild.</p>
-                <input type="file" ref="fileInput" class="form-control" accept=".png,.svg,.jpg,.webp"
-                    @change="changeBackground">
-            </div>
-            <div class="col">
-                <button class="btn btn-danger" @click="deleteMap">Radera karta</button>
+                <ChangeBackground />
             </div>
         </div>
     </div>
