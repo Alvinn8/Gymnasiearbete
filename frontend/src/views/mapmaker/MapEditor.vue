@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { apiGet, apiDelete, errorHandler, apiPost, handleError } from "@/api/api";
+import { apiGet, errorHandler, apiPost, handleError } from "@/api/api";
 import { useRoute } from "vue-router";
 import { reactive, ref, watch } from "vue";
 import Swal from "sweetalert2";
-import router from "@/router";
 import PanZoom from "@/components/PanZoom.vue";
-import EditableWall from "@/components/editor/EditableWall.vue";
-import ChangeBackground from "@/components/ChangeBackground.vue";
+import ChangeBackground from "@/components/editor/ChangeBackground.vue";
+import NewWall from "@/components/editor/NewWall.vue";
+import DeleteMap from "@/components/editor/DeleteMap.vue";
+import MapPartEditor from "@/components/editor/MapPartEditor.vue";
 
 interface Data {
     name: string;
@@ -16,29 +17,12 @@ interface Data {
     }[];
 }
 
-interface Wall {
-    id: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
-interface MapPartData {
-    walls: Wall[] | null;
-    background: string | null;
-}
-
 const route = useRoute();
 const data = reactive<Data>({
     name: "",
     mapParts: []
 });
 const currentMapPartId = ref<number | null>(null);
-const mapPartData = reactive<MapPartData>({
-    walls: null,
-    background: null
-});
 
 watch(
     () => route.params.map_id,
@@ -57,36 +41,6 @@ watch(
     },
     { immediate: true }
 );
-
-watch(currentMapPartId, async () => {
-    const info = await apiGet(`map/${route.params.map_id}/part/${currentMapPartId.value}/info`)
-        .catch(err => console.error(err));
-    if (!info) return;
-
-    mapPartData.walls = info.walls;
-
-    if (info.background) {
-        mapPartData.background = info.background;
-    }
-});
-
-async function deleteMap() {
-    const result = await Swal.fire({
-        title: "Är du säker?",
-        showCancelButton: true,
-        cancelButtonText: "Avbryt",
-        confirmButtonText: "Radera",
-        confirmButtonColor: "red"
-    });
-    if (!result.isConfirmed) {
-        return;
-    }
-    const mapId = route.params.map_id;
-    await apiDelete(`map/${mapId}`);
-    router.push({
-        name: "maps"
-    });
-}
 
 async function newPart() {
     const res = await Swal.fire({
@@ -116,33 +70,6 @@ async function newPart() {
     }
 }
 
-async function newWall() {
-    if (!mapPartData.walls) return;
-
-    const res = await apiPost(`map/${route.params.map_id}/part/${currentMapPartId.value}/wall/new`, {})
-        .catch(handleError);
-    
-    if (!res) return;
-    
-    const wall = {
-        id: res.id,
-        x: 0,
-        y: 0,
-        width: 10,
-        height: 40
-    };
-
-    const wall0 = mapPartData.walls[0];
-    if (wall0) {
-        wall.x = wall0.x + 40;
-        wall.y = wall0.y + 40;
-        wall.width = wall0.width;
-        wall.height = wall0.height;
-    }
-
-    mapPartData.walls.push(wall);
-}
-
 type Change = { id: number, property: string, value: number };
 let pendingChanges: Change[] = [];
 let pendingChangesId: number | null = null;
@@ -168,11 +95,12 @@ function appendChange(change: Change) {
             </div>
             <div class="col">
                 <button class="btn btn-primary m-1">Dela karta</button>
-                <button class="btn btn-danger m-1" @click="deleteMap">Radera karta</button>
+                <DeleteMap />
             </div>
             <div class="col part">
                 <div v-if="data && data.mapParts.length > 0">
                     <select class="form-select" v-model="currentMapPartId">
+                        <option value="null" disabled>Välj en kartdel</option>
                         <option v-for="mapPart of data.mapParts" :key="mapPart.id" :value="mapPart.id">
                             {{ mapPart.name }}
                         </option>
@@ -180,12 +108,20 @@ function appendChange(change: Change) {
                 </div>
                 <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
             </div>
-            <div class="col">
-                <button class="btn btn-success" @click="newWall">Ny vägg</button>
-            </div>
-            <div class="col">
-                <ChangeBackground />
-            </div>
+            <template v-if="currentMapPartId">
+                <div class="col">
+                    <NewWall
+                        :current-map-part-id="currentMapPartId"
+                        @new-wall="(wall) => mapPartData.walls?.push(wall)"
+                    />
+                </div>
+                <div class="col">
+                    <ChangeBackground
+                        :current-map-part-id="currentMapPartId"
+                        @change-background="(background) => mapPartData.background = background"
+                    />
+                </div>
+            </template>
         </div>
     </div>
     <div class="container-fluid">
@@ -193,12 +129,10 @@ function appendChange(change: Change) {
             <div v-if="!mapPartData.walls">
                 <p>Vänligen välj kartdel.</p>
             </div>
-            <img v-if="mapPartData.background" :src="mapPartData.background" alt="Bakgrund">
-            <div v-if="mapPartData.walls">
-                <EditableWall v-for="wall of mapPartData.walls" :key="wall.id" :x="wall.x" :y="wall.y"
-                    :width="wall.width" :height="wall.height"
-                    :on-change="(property, value) => { wall[property] = value; appendChange({ id: wall.id, property, value }) }" />
-            </div>
+            <MapPartEditor
+                v-if="currentMapPartId"
+                :map-part-id="currentMapPartId"
+            />
         </PanZoom>
     </div>
 </template>
