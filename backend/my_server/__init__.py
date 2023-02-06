@@ -8,4 +8,5 @@ app.config.from_object(Config)
 
 CORS(app)
 
-from my_server import routes, error
+from my_server import error
+from my_server.routes import auth, map, map_part, wall
