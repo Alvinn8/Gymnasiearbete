@@ -4,7 +4,7 @@ from my_server.auth import map_part_required
 from my_server.database_handler import create_connection
 
 
-@app.route("/api/map/<map_id>/part/<part_id>/wall/new")
+@app.route("/api/map/<map_id>/part/<part_id>/wall/new", methods=["POST"])
 @map_part_required
 def new_wall(jwt, map_id, part_id):
 
@@ -34,14 +34,10 @@ def edit_wall(jwt, map_id, part_id):
     cur = conn.cursor()
 
     data = request.get_json()
-    for change in data["changes"]:
-        property_to_change = change["property"]
-        if property_to_change not in ("x", "y", "width", "height"):
-            abort(400)
+    for wall in data["changes"]:
         cur.execute(
-            "UPDATE Wall SET " + property_to_change +
-            " = ? WHERE id = ? AND WHERE map_part_id = ?",
-            (change["value"], data["id"], part_id)
+            "UPDATE Wall SET x = ?, y = ?, width = ?, height = ? WHERE id = ?",
+            (wall["x"], wall["y"], wall["width"], wall["height"], wall["id"])
         )
 
     conn.commit()

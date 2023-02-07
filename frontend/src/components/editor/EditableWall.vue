@@ -1,17 +1,21 @@
 <script setup lang="ts">
+import type { DimensionsProperty } from "@/types";
 import { onUnmounted, ref } from "vue";
+
 const props = defineProps<{
     x: number;
     y: number;
     width: number;
     height: number;
-    onChange?: (property: "x" | "y" | "width" | "height", value: number) => void;
+}>();
+
+const emit = defineEmits<{
+    (e: "change", property: DimensionsProperty, value: number): void
 }>();
 
 const hovered = ref(false);
 
 function handleKeyPress(e: KeyboardEvent) {
-    if (!props.onChange) return;
     e.preventDefault();
     
     let distance = 10;
@@ -20,25 +24,25 @@ function handleKeyPress(e: KeyboardEvent) {
     }
 
     switch (e.key.toLowerCase()) {
-    case "w": props.onChange("y", props.y - distance); break;
-    case "a": props.onChange("x", props.x - distance); break;
-    case "s": props.onChange("y", props.y + distance); break;
-    case "d": props.onChange("x", props.x + distance); break;
+    case "w": emit("change", "y", props.y - distance); break;
+    case "a": emit("change", "x", props.x - distance); break;
+    case "s": emit("change", "y", props.y + distance); break;
+    case "d": emit("change", "x", props.x + distance); break;
 
     case "i":
         if (props.height > distance) {
-            props.onChange("y", props.y - distance);
-            props.onChange("height", props.height + distance);
+            emit("change", "y", props.y - distance);
+            emit("change", "height", props.height + distance);
         }
         break;
     case "j":
         if (props.width > distance) {
-            props.onChange("x", props.x - distance);
-            props.onChange("width", props.width + distance);
+            emit("change", "x", props.x - distance);
+            emit("change", "width", props.width + distance);
         }
         break;
-    case "k": props.onChange("height", Math.max(10, props.height + distance)); break;
-    case "l": props.onChange("width", Math.max(10, props.width + distance)); break;
+    case "k": emit("change", "height", Math.max(10, props.height + distance)); break;
+    case "l": emit("change", "width", Math.max(10, props.width + distance)); break;
     }
 }
 

@@ -3,9 +3,6 @@ import { apiGet, errorHandler, apiPost, handleError } from "@/api/api";
 import { useRoute } from "vue-router";
 import { reactive, ref, watch } from "vue";
 import Swal from "sweetalert2";
-import PanZoom from "@/components/PanZoom.vue";
-import ChangeBackground from "@/components/editor/ChangeBackground.vue";
-import NewWall from "@/components/editor/NewWall.vue";
 import DeleteMap from "@/components/editor/DeleteMap.vue";
 import MapPartEditor from "@/components/editor/MapPartEditor.vue";
 
@@ -70,21 +67,6 @@ async function newPart() {
     }
 }
 
-type Change = { id: number, property: string, value: number };
-let pendingChanges: Change[] = [];
-let pendingChangesId: number | null = null;
-
-function appendChange(change: Change) {
-    if (pendingChangesId) clearTimeout(pendingChangesId);
-    pendingChanges.push(change);
-    pendingChangesId = setTimeout(() => {
-        apiPost(`map/${route.params.map_id}/part/${currentMapPartId.value}/wall/edit`, {
-            changes: pendingChanges
-        });
-        pendingChanges = [];
-    }, 2500);
-}
-
 </script>
 
 <template>
@@ -108,43 +90,10 @@ function appendChange(change: Change) {
                 </div>
                 <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
             </div>
-            <template v-if="currentMapPartId">
-                <div class="col">
-                    <NewWall
-                        :current-map-part-id="currentMapPartId"
-                        @new-wall="(wall) => mapPartData.walls?.push(wall)"
-                    />
-                </div>
-                <div class="col">
-                    <ChangeBackground
-                        :current-map-part-id="currentMapPartId"
-                        @change-background="(background) => mapPartData.background = background"
-                    />
-                </div>
-            </template>
         </div>
     </div>
-    <div class="container-fluid">
-        <PanZoom>
-            <div v-if="!mapPartData.walls">
-                <p>Vänligen välj kartdel.</p>
-            </div>
-            <MapPartEditor
-                v-if="currentMapPartId"
-                :map-part-id="currentMapPartId"
-            />
-        </PanZoom>
-    </div>
+    <MapPartEditor
+        v-if="currentMapPartId"
+        :map-part-id="currentMapPartId"
+    />
 </template>
-
-<style scoped>
-.container-fluid {
-    overflow: hidden;
-    border: 2px solid #ddd;
-    height: 85vh;
-}
-
-.part {
-    max-width: 20em;
-}
-</style>
