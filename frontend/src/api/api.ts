@@ -100,14 +100,6 @@ export async function apiDelete(endpoint: string) {
     });
 }
 
-/** @deprecated */
-export function handleNetworkError() {
-    Swal.fire({
-        title: "Nätverksfel",
-        icon: "error"
-    });
-}
-
 export function handleError(error: unknown) {
     if (error instanceof NetworkError) {
         Swal.fire({
@@ -141,6 +133,19 @@ export function handleError(error: unknown) {
             return;
         }
     }
+    if (error instanceof ApiResponseError) {
+        Swal.fire({
+            title: "Serverfel",
+            text: error.json.error ? error.json.error : error.message,
+            icon: "error"
+        });
+        return;
+    }
+    Swal.fire({
+        title: "Okänt fel",
+        text: "Ett fel uppstod när en nätverksförfrågan utfördes.",
+        icon: "error"
+    });
 }
 
 type HttpStatusErrorHandler = [statusCode: number, handler: (response: Response) => any];

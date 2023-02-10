@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { apiGet, errorHandler, apiPost, handleError } from "@/api/api";
 import { useRoute } from "vue-router";
-import { reactive, ref, watch } from "vue";
+import { provide, reactive, ref, watch } from "vue";
 import Swal from "sweetalert2";
 import DeleteMap from "@/components/editor/DeleteMap.vue";
 import MapPartEditor from "@/components/editor/MapPartEditor.vue";
+import { mapPartIdKey } from "@/components/keys";
 
 interface Data {
     name: string;
@@ -20,6 +21,8 @@ const data = reactive<Data>({
     mapParts: []
 });
 const currentMapPartId = ref<number | null>(null);
+
+provide(mapPartIdKey, currentMapPartId);
 
 watch(
     () => route.params.map_id,
@@ -94,6 +97,5 @@ async function newPart() {
     </div>
     <MapPartEditor
         v-if="currentMapPartId"
-        :map-part-id="currentMapPartId"
     />
 </template>

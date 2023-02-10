@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { apiPost } from "@/api/api";
-import { ref } from "vue";
+import Swal from "sweetalert2";
+import { inject, ref } from "vue";
 import { useRoute } from "vue-router";
+import { mapPartIdKey } from "../keys";
 
 const props = defineProps<{
-    currentMapPartId: number
+    scale: number | null;
 }>();
 
 const emit = defineEmits<{
-    (e: "change-background", backgroundUrl: string): void
+    (e: "change-background", backgroundUrl: string): void;
+    (e: "change-scale", scale: number): void;
 }>();
 
 const route = useRoute();
+const mapPartId = inject(mapPartIdKey);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 async function changeBackground() {
@@ -33,21 +37,49 @@ async function changeBackground() {
         };
     });
 
-    await apiPost(`map/${route.params.map_id}/part/${props.currentMapPartId}/background`, {
+    await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/background`, {
         file: base64
     });
 
     emit("change-background", base64);
 }
 
+async function changeScale() {
+    const res = await Swal.fire({
+        title: "Ändra skala på bakgrunden",
+        input: "number",
+        showCancelButton: true,
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+    if (res.isConfirmed && res.value) {
+        emit("change-scale", parseInt(res.value));
+    }
+}
 </script>
 <template>
-    <p>Ändra bakgrundsbild.</p>
-    <input
-        type="file"
-        ref="fileInput"
-        class="form-control"
-        accept=".png,.svg,.jpg,.webp"
-        @change="changeBackground"
-    >
+    <div class="border p-1">
+        <button class="btn btn-secondary m-2" @click="fileInput?.click()">Ändra bakgrundsbild</button>
+        <input
+            type="file"
+            ref="fileInput"
+            class="form-control hide"
+            accept=".png,.svg,.jpg,.webp"
+            @change="changeBackground"
+        >
+
+        <br>
+        <button class="btn btn-secondary m-2" @click="changeScale">Ändra skala</button>
+        <span>Nuvarande skala på bakgrunden: {{ props.scale ?? "laddar..." }}</span>
+    </div>
 </template>
+
+<style scoped>
+.border {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+.hide {
+    display: none;
+}
+</style>

@@ -40,14 +40,16 @@ def map_part_info(jwt, map_id, part_id):
         (part_id,)
     ).fetchall()
 
-    background_blob = cur.execute(
-        "SELECT background FROM MapPart WHERE id = ?",
+    background_data = cur.execute(
+        "SELECT background, background_scale FROM MapPart WHERE id = ?",
         (part_id,)
     ).fetchone()
 
     background = None
-    if background_blob is not None:
-        background = background_blob[0]
+    background_scale = None
+    if background_data is not None:
+        background = background_data[0]
+        background_scale = background_data[1]
 
     conn.close()
 
@@ -64,7 +66,8 @@ def map_part_info(jwt, map_id, part_id):
     return {
         "success": True,
         "walls": walls,
-        "background": background
+        "background": background,
+        "background_scale": background_scale
     }
 
 
@@ -79,6 +82,26 @@ def map_part_background(jwt, map_id, part_id):
     cur.execute(
         "UPDATE MapPart SET background = ? WHERE id = ?",
         (blob, part_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+@app.route("/api/map/<map_id>/part/<part_id>/background_scale", methods=["POST"])
+@map_part_required
+def map_part_background_scale(jwt, map_id, part_id):
+    conn = create_connection()
+    cur = conn.cursor()
+
+    scale = request.json["scale"]
+
+    cur.execute(
+        "UPDATE MapPart SET background_scale = ? WHERE id = ?",
+        (scale, part_id)
     )
 
     conn.commit()
