@@ -53,7 +53,11 @@ async function changeScale() {
         allowOutsideClick: () => !Swal.isLoading()
     });
     if (res.isConfirmed && res.value) {
-        emit("change-scale", parseInt(res.value));
+        const scale = parseInt(res.value);
+        await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/background_scale`, {
+            scale: scale
+        });
+        emit("change-scale", scale);
     }
 }
 </script>

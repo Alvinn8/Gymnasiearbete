@@ -1,12 +1,39 @@
-export interface Dimensions {
+/**
+ * A pair of position coordinates.
+ */
+export type Position = {
     x: number;
     y: number;
+};
+
+/**
+ * Width and height.
+ */
+export type Size = {
     width: number;
     height: number;
-}
+};
+
+/**
+ * Something with a position and size.
+ */
+export type Dimensions = Position & Size;
 
 export type DimensionsProperty = keyof Dimensions;
 
-export type Wall = {
+/**
+ * Something that has an id.
+ */
+export type Identifiable = {
     id: number;
-} & Dimensions;
+};
+
+/**
+ * A wall on a map.
+ */
+export type Wall = Identifiable & Dimensions;
+
+/**
+ * A point on a map.
+ */
+export type Point = Identifiable & Position;

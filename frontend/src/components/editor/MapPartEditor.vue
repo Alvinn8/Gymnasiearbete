@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
-import type { DimensionsProperty, Wall } from "@/types";
+import type { DimensionsProperty, Point, Position, Wall } from "@/types";
 import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import PanZoom from "../PanZoom.vue";
 import ChangeBackground from "./ChangeBackground.vue";
+import EditablePoint from "./EditablePoint.vue";
 import EditableWall from "./EditableWall.vue";
+import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
 
 const walls = ref<Wall[] | null>(null);
+const points = ref<Point[] | null>(null);
 const background = ref<string | null>(null);
 const backgroundScale = ref<number | null>(null);
 
@@ -22,11 +25,13 @@ watch(mapPartId!, async () => {
     if (!info) return;
 
     walls.value = info.walls;
+    points.value = info.points;
     background.value = info.background;
     backgroundScale.value = info.background_scale;
 }, { immediate: true });
 
 const changedWalls: Set<Wall> = new Set();
+const changedPoints: Set<Point> = new Set();
 let pendingChangesId: number | null = null;
 
 function updateWall(wallId: number, property: DimensionsProperty, value: number) {
@@ -38,24 +43,57 @@ function updateWall(wallId: number, property: DimensionsProperty, value: number)
     wall[property] = value;
     
     // Add the wall to the set of walls with changes
-    
     changedWalls.add(wall);
+
+    // And save when its time
+    saveWithDebounce();
+}
+
+function updatePoint(pointId: number, property: keyof Position, value: number) {
+    // Find the point in question
+    const point = points.value?.find(p => p.id === pointId);
+    if (!point) return;
+
+    // Update the point
+    point[property] = value;
+
+    // Add to the set of changes
+    changedPoints.add(point);
+
+    // And save when its time
+    saveWithDebounce();
+}
+
+function saveWithDebounce() {
 
     // Use debounce to only update when no changes are being made to avoid spamming
     // updates for every small movement.
 
     if (pendingChangesId) clearTimeout(pendingChangesId);
-    pendingChangesId = setTimeout(() => {
-        // Convert the changedWalls set into an array
-        const changes = [...changedWalls.values()];
+    pendingChangesId = setTimeout(async () => {
+        
+        // If walls have been changed
+        if (changedWalls.size > 0) {
+            // Write the changes to the database
+            await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/wall/edit`, {
+                // Convert the changedWalls set into an array
+                changes: [...changedWalls.values()]
+            }).catch(handleError);
+            
+            // Clear the set of changed walls, they are now up-to-date
+            changedWalls.clear();
+        }
 
-        // Write the changes to the database
-        apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/wall/edit`, {
-            changes: changes
-        }).catch(handleError);
-
-        // Clear the set of changed walls, they are now up-to-date
-        changedWalls.clear();
+        if (changedPoints.size > 0) {
+            // Write the changes to the database
+            await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point/edit`, {
+                // Convert the changedPoints set into an array
+                changes: [...changedPoints.values()]
+            }).catch(handleError);
+            
+            // Clear the set of changed points, they are now up-to-date
+            changedPoints.clear();
+        }
 
         // Log
         console.log("%c ✔ Saved", "color: green;");
@@ -86,6 +124,9 @@ onUnmounted(() => {
             <NewWall
                 @new-wall="(wall) => walls?.push(wall)"
             />
+            <NewPoint
+                @new-point="(point) => points?.push(point)"
+            />
         </div>
         <div class="col">
             <ChangeBackground
@@ -111,6 +152,14 @@ onUnmounted(() => {
                     :width="wall.width" :height="wall.height"
                     @change="(property, value) => updateWall(wall.id, property, value)"
                     @copy="(wall) => walls?.push(wall)"
+                />
+                <EditablePoint
+                    v-for="point of points"
+                    :key="point.id"
+                    :x="point.x"
+                    :y="point.y"
+                    @change="(property, value) => updatePoint(point.id, property, value)"
+                    @copy="(point) => points?.push(point)"
                 />
             </div>
         </PanZoom>

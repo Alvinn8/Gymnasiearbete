@@ -40,6 +40,11 @@ def map_part_info(jwt, map_id, part_id):
         (part_id,)
     ).fetchall()
 
+    points_data = cur.execute(
+        "SELECT id, x, y FROM Point WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
     background_data = cur.execute(
         "SELECT background, background_scale FROM MapPart WHERE id = ?",
         (part_id,)
@@ -62,10 +67,19 @@ def map_part_info(jwt, map_id, part_id):
             "width": wall_data[3],
             "height": wall_data[4]
         })
+    
+    points = []
+    for point_data in points_data:
+        points.append({
+            "id": point_data[0],
+            "x": point_data[1],
+            "y": point_data[2]
+        })
 
     return {
         "success": True,
         "walls": walls,
+        "points": points,
         "background": background,
         "background_scale": background_scale
     }
