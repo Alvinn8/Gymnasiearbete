@@ -63,7 +63,7 @@ async function copyPoint() {
 div {
     background-color: #57bee1;
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     border-radius: 50%;
     border: 1px solid #5785e1;
     width: 10px;

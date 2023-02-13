@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
-import type { DimensionsProperty, Point, Position, Wall } from "@/types";
+import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType } from "@/types";
 import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
@@ -10,9 +10,11 @@ import EditablePoint from "./EditablePoint.vue";
 import EditableWall from "./EditableWall.vue";
 import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
+import PointConnection from "./PointConnection.vue";
 
 const walls = ref<Wall[] | null>(null);
 const points = ref<Point[] | null>(null);
+const pointConnections  = ref<PointConnectionType[] | null>(null);
 const background = ref<string | null>(null);
 const backgroundScale = ref<number | null>(null);
 
@@ -28,6 +30,19 @@ watch(mapPartId!, async () => {
     points.value = info.points;
     background.value = info.background;
     backgroundScale.value = info.background_scale;
+    pointConnections.value = info.point_connections.map((pointConnection: any) => {
+        const pointA = points.value?.find(point => point.id === pointConnection.point_a_id);
+        const pointB = points.value?.find(point => point.id === pointConnection.point_b_id);
+        if (pointA && pointB) {
+            return {
+                id: pointConnection.id,
+                point_a: pointA,
+                point_b: pointB,
+                weight: pointConnection.weight
+            };
+        }
+        return null;
+    }).filter((c: any) => !!c); // Remove any null items
 }, { immediate: true });
 
 const changedWalls: Set<Wall> = new Set();
@@ -160,6 +175,12 @@ onUnmounted(() => {
                     :y="point.y"
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => points?.push(point)"
+                />
+                <PointConnection
+                    v-for="pointConnection of pointConnections"
+                    :key="pointConnection.id"
+                    :point_a="pointConnection.point_a"
+                    :point_b="pointConnection.point_b"
                 />
             </div>
         </PanZoom>

@@ -45,6 +45,14 @@ def map_part_info(jwt, map_id, part_id):
         (part_id,)
     ).fetchall()
 
+    point_connections_data = cur.execute(
+        "SELECT PointConnection.id, point_a_id, point_b_id, weight FROM PointConnection " +
+        "JOIN Point AS point_a ON point_a.id = point_a_id " +
+        "JOIN Point AS point_b ON point_b.id = point_b_id " +
+        "WHERE point_a.map_part_id = ? OR point_b.map_part_id = ?",
+        (part_id, part_id)
+    ).fetchall()
+
     background_data = cur.execute(
         "SELECT background, background_scale FROM MapPart WHERE id = ?",
         (part_id,)
@@ -67,7 +75,7 @@ def map_part_info(jwt, map_id, part_id):
             "width": wall_data[3],
             "height": wall_data[4]
         })
-    
+
     points = []
     for point_data in points_data:
         points.append({
@@ -76,10 +84,20 @@ def map_part_info(jwt, map_id, part_id):
             "y": point_data[2]
         })
 
+    point_connections = []
+    for point_connection in point_connections_data:
+        point_connections.append({
+            "id": point_connection[0],
+            "point_a_id": point_connection[1],
+            "point_b_id": point_connection[2],
+            "weight": point_connection[3]
+        })
+
     return {
         "success": True,
         "walls": walls,
         "points": points,
+        "point_connections": point_connections,
         "background": background,
         "background_scale": background_scale
     }
@@ -104,6 +122,7 @@ def map_part_background(jwt, map_id, part_id):
     return {
         "success": True
     }
+
 
 @app.route("/api/map/<map_id>/part/<part_id>/background_scale", methods=["POST"])
 @map_part_required

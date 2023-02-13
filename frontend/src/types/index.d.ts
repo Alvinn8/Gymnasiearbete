@@ -37,3 +37,11 @@ export type Wall = Identifiable & Dimensions;
  * A point on a map.
  */
 export type Point = Identifiable & Position;
+
+/**
+ * A connection between two points on a map.
+ */
+export type PointConnection = Identifiable & {
+    point_a: Position;
+    point_b: Position;
+};
