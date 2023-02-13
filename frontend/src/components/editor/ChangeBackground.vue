@@ -71,8 +71,6 @@ async function changeScale() {
             accept=".png,.svg,.jpg,.webp"
             @change="changeBackground"
         >
-
-        <br>
         <button class="btn btn-secondary m-2" @click="changeScale">Ändra skala</button>
         <span>Nuvarande skala på bakgrunden: {{ props.scale ?? "laddar..." }}</span>
     </div>

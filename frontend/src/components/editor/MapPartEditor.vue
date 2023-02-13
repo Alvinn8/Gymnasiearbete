@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
 import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType } from "@/types";
-import { inject, onMounted, onUnmounted, ref, watch } from "vue";
+import { inject, onMounted, onUnmounted, ref, unref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import PanZoom from "../PanZoom.vue";
@@ -11,6 +11,7 @@ import EditableWall from "./EditableWall.vue";
 import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
 import PointConnection from "./PointConnection.vue";
+import ConnectLine from "./ConnectLine.vue";
 
 const walls = ref<Wall[] | null>(null);
 const points = ref<Point[] | null>(null);
@@ -20,6 +21,11 @@ const backgroundScale = ref<number | null>(null);
 
 const route = useRoute();
 const mapPartId = inject(mapPartIdKey);
+
+const connectionCallbacks = {
+    clickPoint: (point: Point) => {},
+    rightClickPoint: (point: Point) => {}
+};
 
 watch(mapPartId!, async () => {
     const info = await apiGet(`map/${route.params.map_id}/part/${mapPartId!.value}/info`)
@@ -160,6 +166,7 @@ onUnmounted(() => {
                 :style="`transform: scale(${backgroundScale});`"
             >
             <div v-if="walls">
+                <!-- Render the walls. -->
                 <EditableWall
                     v-for="wall of walls"
                     :key="wall.id"
@@ -168,6 +175,7 @@ onUnmounted(() => {
                     @change="(property, value) => updateWall(wall.id, property, value)"
                     @copy="(wall) => walls?.push(wall)"
                 />
+                <!-- Render points. -->
                 <EditablePoint
                     v-for="point of points"
                     :key="point.id"
@@ -175,12 +183,23 @@ onUnmounted(() => {
                     :y="point.y"
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => points?.push(point)"
+                    @click="() => connectionCallbacks.clickPoint(point)"
+                    @right-click="() => connectionCallbacks.rightClickPoint(point)"
                 />
+                <!-- Render connections between points. -->
                 <PointConnection
                     v-for="pointConnection of pointConnections"
                     :key="pointConnection.id"
                     :point_a="pointConnection.point_a"
                     :point_b="pointConnection.point_b"
+                />
+                <!-- This component handles creating new connections. -->
+                <ConnectLine
+                    @callbacks="(clickPoint, rightClickPoint) => {
+                        connectionCallbacks.clickPoint = clickPoint;
+                        connectionCallbacks.rightClickPoint = rightClickPoint;
+                    }"
+                    @new-connection="(connection) => pointConnections?.push(connection)"
                 />
             </div>
         </PanZoom>

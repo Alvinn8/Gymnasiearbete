@@ -22,6 +22,12 @@ const emit = defineEmits<{
      * Called when the user presses a key to copy the point.
      */
     (e: "copy", wall: Point): void;
+
+    /** Called when the point is clicked. */
+    (e: "click"): void;
+
+    /** Called when the point is right clicked. */
+    (e: "right-click"): void;
 }>();
 
 const movement = useMovement({
@@ -56,6 +62,8 @@ async function copyPoint() {
         @mouseover="movement.mouseover"
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
+        @click="emit('click')"
+        @contextmenu.prevent="emit('right-click')"
     ></div>
 </template>
 
