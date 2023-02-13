@@ -88,6 +88,11 @@ const router = createRouter({
             component: () => import("../views/mapmaker/MapEditor.vue"),
             name: "map",
             beforeEnter: [requireLogin, verifyMapExists]
+        },
+        {
+            path: "/map/:map_id",
+            component: () => import("../views/mapviewer/MapView.vue"),
+            name: "view-map"
         }
     ]
 });

@@ -45,7 +45,6 @@ export default function useMovement({
     }
     
     function mouseUp() {
-        console.log("up");
         panzoom?.value.resume();
         document.body.removeEventListener("mousemove", mouseMove);
         document.body.removeEventListener("mouseup", mouseUp);
