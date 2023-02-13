@@ -24,7 +24,7 @@ const mapPartId = inject(mapPartIdKey);
 
 const connectionCallbacks = {
     clickPoint: (point: Point) => {},
-    rightClickPoint: (point: Point) => {}
+    rightClickPoint: (e: MouseEvent, point: Point) => {}
 };
 
 watch(mapPartId!, async () => {
@@ -184,7 +184,7 @@ onUnmounted(() => {
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => points?.push(point)"
                     @click="() => connectionCallbacks.clickPoint(point)"
-                    @right-click="() => connectionCallbacks.rightClickPoint(point)"
+                    @right-click="(e) => connectionCallbacks.rightClickPoint(e, point)"
                 />
                 <!-- Render connections between points. -->
                 <PointConnection

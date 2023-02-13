@@ -27,7 +27,7 @@ const emit = defineEmits<{
     (e: "click"): void;
 
     /** Called when the point is right clicked. */
-    (e: "right-click"): void;
+    (e: "right-click", ev: MouseEvent): void;
 }>();
 
 const movement = useMovement({
@@ -63,7 +63,7 @@ async function copyPoint() {
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
         @click="emit('click')"
-        @contextmenu.prevent="emit('right-click')"
+        @contextmenu.prevent="(e) => emit('right-click', e)"
     ></div>
 </template>
 

@@ -8,7 +8,7 @@ import PointConnection from "./PointConnection.vue";
 
 const emit = defineEmits<{
     (e: "new-connection", connection: PointConnectionType): void
-    (e: "callbacks", clickPoint: (point: Point) => void, rightClickPount: (point: Point) => void): void
+    (e: "callbacks", clickPoint: (point: Point) => void, rightClickPount: (e: MouseEvent, point: Point) => void): void
 }>();
 
 const selectedPoint = ref<Point | null>(null);
@@ -22,9 +22,10 @@ async function formNewConnection(pointA: Point, pointB: Point) {
     document.body.removeEventListener("mousemove", mouseMove);
     mousePosition.value = null;
     selectedPoint.value = null;
+    if (pointA === pointB) return;
     const distance = Math.sqrt(
         Math.pow(pointA.x - pointB.x, 2) +
-            Math.pow(pointA.y - pointB.y, 2)
+        Math.pow(pointA.y - pointB.y, 2)
     );
     const res = await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point_connection/new`, {
         point_a_id: pointA.id,
@@ -40,12 +41,21 @@ async function formNewConnection(pointA: Point, pointB: Point) {
     emit("new-connection", connection);
 }
 
+const moveStart = {
+    mouseX: 0,
+    mouseY: 0,
+    thisX: 0,
+    thisY: 0
+};
+
 function mouseMove(e: MouseEvent) {
     const scale = panzoom?.value.getTransform().scale;
     if (!scale) return;
+    const diffX = (e.clientX - moveStart.mouseX) / scale;
+    const diffY = (e.clientY - moveStart.mouseY) / scale;
     mousePosition.value = {
-        x: e.clientX / scale,
-        y: e.clientY / scale
+        x: moveStart.thisX + diffX,
+        y: moveStart.thisY + diffY
     };
 }
 
@@ -55,16 +65,24 @@ function clickPoint(point: Point) {
     }
 }
     
-function rightClickPount(point: Point) {
+function rightClickPoint(e: MouseEvent, point: Point) {
     if (selectedPoint.value) {
         formNewConnection(selectedPoint.value, point);
     } else {
         selectedPoint.value = point;
+        mousePosition.value = {
+            x: point.x,
+            y: point.y
+        };
+        moveStart.mouseX = e.clientX;
+        moveStart.mouseY = e.clientY;
+        moveStart.thisX = point.x;
+        moveStart.thisY = point.y;
         document.body.addEventListener("mousemove", mouseMove);
     }
 }
 
-emit("callbacks", clickPoint, rightClickPount);
+emit("callbacks", clickPoint, rightClickPoint);
 
 onUnmounted(() => {
     document.body.removeEventListener("mousemove", mouseMove);
