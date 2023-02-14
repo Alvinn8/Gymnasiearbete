@@ -1,6 +1,6 @@
 from flask import request
 from my_server import app
-from my_server.auth import map_access_required, map_part_required
+from my_server.auth import map_access_required, map_part_required, map_view_access
 from my_server.database_handler import create_connection
 
 
@@ -101,6 +101,51 @@ def map_part_info(jwt, map_id, part_id):
         "background": background,
         "background_scale": background_scale
     }
+
+@app.route("/api/map/<map_id>/part/<part_id>/brief_info")
+@map_view_access
+def map_part_brief_info(map_id, part_id):
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    walls_data = cur.execute(
+        "SELECT id, x, y, width, height FROM Wall WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
+    points_data = cur.execute(
+        "SELECT id, x, y FROM Point WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
+    conn.close()
+
+    walls = []
+    for wall_data in walls_data:
+        walls.append({
+            "id": wall_data[0],
+            "x": wall_data[1],
+            "y": wall_data[2],
+            "width": wall_data[3],
+            "height": wall_data[4]
+        })
+
+    points = []
+    for point_data in points_data:
+        points.append({
+            "id": point_data[0],
+            "x": point_data[1],
+            "y": point_data[2]
+        })
+
+    return {
+        "success": True,
+        "walls": walls,
+        "points": points
+    }
+
+
 
 
 @app.route("/api/map/<map_id>/part/<part_id>/background", methods=["POST"])

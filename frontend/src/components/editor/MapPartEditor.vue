@@ -212,8 +212,4 @@ onUnmounted(() => {
     border: 2px solid #ddd;
     height: 85vh;
 }
-
-.part {
-    max-width: 20em;
-}
 </style>

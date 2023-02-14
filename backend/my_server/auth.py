@@ -108,3 +108,39 @@ def map_part_required(f):
 
         return f(jwt, map_id, part_id, *args, **kwargs)
     return decorated
+
+# A decorator that denotes that a route requires view access to a map. The map
+# must either me public or the user must be logged in to an account with access
+# to the map.
+def map_view_access(f):
+    @wraps(f)
+    def decorated(map_id, *args, **kwargs):
+        
+        conn = create_connection()
+        cur = conn.cursor()
+
+        public = cur.execute(
+            "SELECT public FROM Map WHERE id = ?",
+            (map_id,)
+        ).fetchone()
+
+        if public is None:
+            return {
+                "success": False,
+                "error": "Kunde inte hitta kartan"
+            }
+        
+        if public[0] == 0:
+            # Private map, we need to verify that the user
+            # is logged in and has access to the map.
+            # TODO we don't have the jwt here
+            conn.close()
+            return {
+                "success": False,
+                "error": "Du har inte tillgång till kartan. Pröva att logga in. Men det kommer inte funka för sidan fungerar inte än... :)"
+            }, 403
+
+        conn.close()
+
+        return f(map_id, *args, **kwargs)
+    return decorated

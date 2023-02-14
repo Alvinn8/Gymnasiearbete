@@ -127,7 +127,7 @@ export function handleError(error: unknown) {
         case 403:
             Swal.fire({
                 title: "Du har inte behörighet.",
-                text: "Du verkar ha landat på en sida som du inte har behörighet. Detta verkar vara en bugg.",
+                text: "Du verkar ha landat på en sida som du inte har behörighet till.",
                 icon: "error"
             });
             return;
