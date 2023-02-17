@@ -12,6 +12,8 @@ interface Data {
     mapParts: {
         id: number;
         name: string;
+        offsetX: number;
+        offsetY: number;
     }[];
 }
 
@@ -57,6 +59,8 @@ watch(
                 v-for="mapPart of data.mapParts"
                 :key="mapPart.id"
                 :map-part-id="mapPart.id"
+                :offset-x="mapPart.offsetX"
+                :offset-y="mapPart.offsetY"
             />
         </PanZoom>
     </div>

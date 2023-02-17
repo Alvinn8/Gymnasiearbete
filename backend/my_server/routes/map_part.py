@@ -109,6 +109,11 @@ def map_part_brief_info(map_id, part_id):
     conn = create_connection()
     cur = conn.cursor()
 
+    part_data = cur.execute(
+        "SELECT offset_x, offset_y FROM MapPart WHERE id = ?",
+        (part_id,)
+    ).fetchone()
+
     walls_data = cur.execute(
         "SELECT id, x, y, width, height FROM Wall WHERE map_part_id = ?",
         (part_id,)
@@ -142,7 +147,9 @@ def map_part_brief_info(map_id, part_id):
     return {
         "success": True,
         "walls": walls,
-        "points": points
+        "points": points,
+        "offsetX": part_data[0],
+        "offsetY": part_data[1]
     }
 
 

@@ -129,18 +129,29 @@ def map_view_access(f):
                 "success": False,
                 "error": "Kunde inte hitta kartan"
             }
-        
+
+        conn.close()
+
         if public[0] == 0:
             # Private map, we need to verify that the user
             # is logged in and has access to the map.
-            # TODO we don't have the jwt here
-            conn.close()
-            return {
-                "success": False,
-                "error": "Du har inte tillgång till kartan. Pröva att logga in. Men det kommer inte funka för sidan fungerar inte än... :)"
-            }, 403
+            @wraps(f)
+            @login_required
+            def decorated2(jwt, *args2, **kwargs2):
+                conn = create_connection()
+                cur = conn.cursor()
 
-        conn.close()
+                if not has_access_to_map(map_id, jwt, cur):
+                    conn.close()
+                    return {
+                        "success": False,
+                        "error": "Du har inte tillgång till kartan. Pröva att logga in."
+                    }, 403
+                
+                conn.close()
+                return f(*args2, **kwargs2)
+            
+            decorated2(map_id, *args, **kwargs)
 
         return f(map_id, *args, **kwargs)
     return decorated

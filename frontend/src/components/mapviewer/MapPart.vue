@@ -7,9 +7,18 @@ import MapWall from "./MapWall.vue";
 
 const props = defineProps<{
     mapPartId: number;
+    offsetX: number;
+    offsetY: number;
 }>();
 
-const data = ref<{ walls: Wall[], points: Point[] } | null>(null);
+type Data = {
+    walls: Wall[];
+    points: Point[];
+    offsetX: number;
+    offsetY: number;
+};
+
+const data = ref<Data | null>(null);
 
 const route = useRoute();
 
@@ -22,7 +31,9 @@ watch(
 
         data.value = {
             walls: info.walls,
-            points: info.points
+            points: info.points,
+            offsetX: info.offsetX,
+            offsetY: info.offsetY
         };
     },
     { immediate: true }
@@ -37,8 +48,8 @@ watch(
         <MapWall
             v-for="wall of data.walls"
             :key="wall.id"
-            :x="wall.x"
-            :y="wall.y"
+            :x="wall.x + offsetX"
+            :y="wall.y + offsetY"
             :width="wall.width"
             :height="wall.height"
         />

@@ -148,7 +148,7 @@ def view_map(map_id):
     ).fetchone()
 
     map_parts_data = cur.execute(
-        "SELECT id, name FROM MapPart WHERE map_id = ?",
+        "SELECT id, name, offset_x, offset_y FROM MapPart WHERE map_id = ?",
         (map_id,)
     ).fetchall()
 
@@ -160,7 +160,9 @@ def view_map(map_id):
 
         map_parts.append({
             "id": map_part_id,
-            "name": map_part_data[1]
+            "name": map_part_data[1],
+            "offsetX": map_part_data[2],
+            "offsetY": map_part_data[3]
         })
 
     return {

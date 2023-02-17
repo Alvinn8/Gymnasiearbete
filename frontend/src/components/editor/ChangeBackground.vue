@@ -47,13 +47,13 @@ async function changeBackground() {
 async function changeScale() {
     const res = await Swal.fire({
         title: "Ändra skala på bakgrunden",
-        input: "number",
+        input: "text",
         showCancelButton: true,
         showLoaderOnConfirm: true,
         allowOutsideClick: () => !Swal.isLoading()
     });
     if (res.isConfirmed && res.value) {
-        const scale = parseInt(res.value);
+        const scale = parseFloat(res.value);
         await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/background_scale`, {
             scale: scale
         });

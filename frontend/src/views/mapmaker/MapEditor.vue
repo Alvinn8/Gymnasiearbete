@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import DeleteMap from "@/components/editor/DeleteMap.vue";
 import MapPartEditor from "@/components/editor/MapPartEditor.vue";
 import { mapPartIdKey } from "@/components/keys";
+import MapRelationEditor from "@/components/editor/relation/MapRelationEditor.vue";
 
 interface Data {
     name: string;
@@ -97,5 +98,8 @@ async function newPart() {
     </div>
     <MapPartEditor
         v-if="currentMapPartId"
+    />
+    <MapRelationEditor
+        v-if="!currentMapPartId"
     />
 </template>

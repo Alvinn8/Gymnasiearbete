@@ -11,9 +11,9 @@ const canSubmit = computed(() => {
 
 async function submit() {
     const response = await apiPost("map/new", {
-            name: name.value
-        })
-        .catch(handleError);
+        name: name.value
+    }).catch(handleError);
+    
     router.push({
         name: "map",
         params: {
