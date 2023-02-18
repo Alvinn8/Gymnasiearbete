@@ -62,8 +62,8 @@ async function changeScale() {
 }
 </script>
 <template>
-    <div class="border p-1">
-        <button class="btn btn-secondary m-2" @click="fileInput?.click()">Ändra bakgrundsbild</button>
+    <div class="border p-2 my-2">
+    <button class="btn btn-secondary m-2" @click="fileInput?.click()">Ändra bakgrundsbild</button>
         <input
             type="file"
             ref="fileInput"
@@ -72,6 +72,7 @@ async function changeScale() {
             @change="changeBackground"
         >
         <button class="btn btn-secondary m-2" @click="changeScale">Ändra skala</button>
+        <br>
         <span>Nuvarande skala på bakgrunden: {{ props.scale ?? "laddar..." }}</span>
     </div>
 </template>

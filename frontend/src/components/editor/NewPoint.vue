@@ -30,5 +30,5 @@ async function newPoint() {
 </script>
 
 <template>
-    <button class="btn btn-success" @click="newPoint">Ny punkt</button>
+    <button class="btn btn-success mx-1" @click="newPoint">Ny punkt</button>
 </template>

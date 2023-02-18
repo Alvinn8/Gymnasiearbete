@@ -32,5 +32,5 @@ async function newWall() {
 </script>
 
 <template>
-    <button class="btn btn-success" @click="newWall">Ny vägg</button>
+    <button class="btn btn-success mx-1" @click="newWall">Ny vägg</button>
 </template>

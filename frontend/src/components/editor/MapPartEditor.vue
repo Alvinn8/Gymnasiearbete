@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
 import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType } from "@/types";
-import { inject, onMounted, onUnmounted, ref, unref, watch } from "vue";
+import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
-import PanZoom from "../PanZoom.vue";
 import ChangeBackground from "./ChangeBackground.vue";
 import EditablePoint from "./EditablePoint.vue";
 import EditableWall from "./EditableWall.vue";
@@ -12,7 +11,17 @@ import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
 import PointConnection from "./PointConnection.vue";
 import ConnectLine from "./ConnectLine.vue";
+import MapEditorBase from "./MapEditorBase.vue";
 
+const props = defineProps<{
+    mapPartId: number;
+}>();
+
+const emit = defineEmits<{
+    (e: "back"): void;
+}>();
+
+const name = ref<string | null>(null);
 const walls = ref<Wall[] | null>(null);
 const points = ref<Point[] | null>(null);
 const pointConnections  = ref<PointConnectionType[] | null>(null);
@@ -20,18 +29,20 @@ const background = ref<string | null>(null);
 const backgroundScale = ref<number | null>(null);
 
 const route = useRoute();
-const mapPartId = inject(mapPartIdKey);
+
+provide(mapPartIdKey, toRef(props, "mapPartId"));
 
 const connectionCallbacks = {
     clickPoint: (point: Point) => {},
     rightClickPoint: (e: MouseEvent, point: Point) => {}
 };
 
-watch(mapPartId!, async () => {
-    const info = await apiGet(`map/${route.params.map_id}/part/${mapPartId!.value}/info`)
+watch(props, async () => {
+    const info = await apiGet(`map/${route.params.map_id}/part/${props.mapPartId}/info`)
         .catch(handleError);
     if (!info) return;
 
+    name.value = info.name;
     walls.value = info.walls;
     points.value = info.points;
     background.value = info.background;
@@ -96,7 +107,7 @@ function saveWithDebounce() {
         // If walls have been changed
         if (changedWalls.size > 0) {
             // Write the changes to the database
-            await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/wall/edit`, {
+            await apiPost(`map/${route.params.map_id}/part/${props.mapPartId}/wall/edit`, {
                 // Convert the changedWalls set into an array
                 changes: [...changedWalls.values()]
             }).catch(handleError);
@@ -107,7 +118,7 @@ function saveWithDebounce() {
 
         if (changedPoints.size > 0) {
             // Write the changes to the database
-            await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point/edit`, {
+            await apiPost(`map/${route.params.map_id}/part/${props.mapPartId}/point/edit`, {
                 // Convert the changedPoints set into an array
                 changes: [...changedPoints.values()]
             }).catch(handleError);
@@ -140,25 +151,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="row">
-        <div class="col">
+    <MapEditorBase>
+        <template #aside>
+            <h2>{{ name }}</h2>
+            <button class="btn btn-primary mx-1" @click="emit('back')">Tillbaka</button>
             <NewWall
                 @new-wall="(wall) => walls?.push(wall)"
             />
             <NewPoint
                 @new-point="(point) => points?.push(point)"
             />
-        </div>
-        <div class="col">
             <ChangeBackground
                 :scale="backgroundScale"
                 @change-background="(newBackground) => background = newBackground"
                 @change-scale="(scale) => backgroundScale = scale"
             />
-        </div>
-    </div>
-    <div class="container-fluid">
-        <PanZoom>
+        </template>
+        <template #panzoom>
             <img
                 v-if="background"
                 :src="background"
@@ -202,14 +211,6 @@ onUnmounted(() => {
                     @new-connection="(connection) => pointConnections?.push(connection)"
                 />
             </div>
-        </PanZoom>
-    </div>
+        </template>
+    </MapEditorBase>
 </template>
-
-<style scoped>
-.container-fluid {
-    overflow: hidden;
-    border: 2px solid #ddd;
-    height: 85vh;
-}
-</style>

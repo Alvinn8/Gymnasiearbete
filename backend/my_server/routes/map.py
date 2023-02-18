@@ -114,7 +114,7 @@ def map_info(jwt, map_id):
     ).fetchone()
 
     map_parts_data = cur.execute(
-        "SELECT id, name FROM MapPart WHERE map_id = ?",
+        "SELECT id, name, offset_x, offset_y, z FROM MapPart WHERE map_id = ?",
         (map_id,)
     ).fetchall()
 
@@ -124,7 +124,10 @@ def map_info(jwt, map_id):
     for map_part_data in map_parts_data:
         map_parts.append({
             "id": map_part_data[0],
-            "name": map_part_data[1]
+            "name": map_part_data[1],
+            "offsetX": map_part_data[2],
+            "offsetY": map_part_data[3],
+            "z": map_part_data[4]
         })
 
     return {

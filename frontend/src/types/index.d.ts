@@ -45,3 +45,11 @@ export type PointConnection = Identifiable & {
     point_a: Position;
     point_b: Position;
 };
+
+export type MapPart = {
+    id: number;
+    name: string;
+    z: number;
+    offsetX: number;
+    offsetY: number;
+};

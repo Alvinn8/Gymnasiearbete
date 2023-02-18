@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { apiGet, errorHandler, apiPost, handleError } from "@/api/api";
 import { useRoute } from "vue-router";
-import { provide, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import Swal from "sweetalert2";
 import DeleteMap from "@/components/editor/DeleteMap.vue";
+import type { MapPart as MapPartType } from "@/types";
+import MapPart from "@/components/mapviewer/MapPart.vue";
 import MapPartEditor from "@/components/editor/MapPartEditor.vue";
-import { mapPartIdKey } from "@/components/keys";
-import MapRelationEditor from "@/components/editor/relation/MapRelationEditor.vue";
+import MapEditorBase from "@/components/editor/MapEditorBase.vue";
 
 interface Data {
     name: string;
-    mapParts: {
-        id: number;
-        name: string;
-    }[];
+    mapParts: MapPartType[];
 }
 
 const route = useRoute();
@@ -22,8 +20,9 @@ const data = reactive<Data>({
     mapParts: []
 });
 const currentMapPartId = ref<number | null>(null);
+const floor = ref(0);
 
-provide(mapPartIdKey, currentMapPartId);
+const visibleParts = computed(() => data.mapParts.filter(mapPart => mapPart.z === floor.value));
 
 watch(
     () => route.params.map_id,
@@ -51,7 +50,8 @@ async function newPart() {
         showLoaderOnConfirm: true,
         preConfirm: async (name) => {
             const res = await apiPost(`map/${route.params.map_id}/part/new`, {
-                name: name
+                name: name,
+                z: floor.value
             }).catch(handleError);
             return {
                 id: res.id,
@@ -62,7 +62,12 @@ async function newPart() {
     });
     if (res.isConfirmed && res.value) {
         const { id, name } = res.value;
-        data.mapParts.push({ id, name });
+        data.mapParts.push({
+            id, name,
+            offsetX: 0,
+            offsetY: 0,
+            z: floor.value
+        });
         currentMapPartId.value = id;
         Swal.fire({
             title: "Kartdelen har skapats",
@@ -83,23 +88,47 @@ async function newPart() {
                 <button class="btn btn-primary m-1">Dela karta</button>
                 <DeleteMap />
             </div>
-            <div class="col part">
-                <div v-if="data && data.mapParts.length > 0">
-                    <select class="form-select" v-model="currentMapPartId">
-                        <option value="null" disabled>Välj en kartdel</option>
-                        <option v-for="mapPart of data.mapParts" :key="mapPart.id" :value="mapPart.id">
-                            {{ mapPart.name }}
-                        </option>
-                    </select>
-                </div>
-                <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
-            </div>
         </div>
     </div>
+
+    <!-- No selected map part. -->
+    <MapEditorBase v-if="!currentMapPartId">
+        <template #panzoom>
+            <MapPart
+                v-for="mapPart of visibleParts"
+                :key="mapPart.id"
+                :map-part-id="mapPart.id"
+                :offset-x="mapPart.offsetX"
+                :offset-y="mapPart.offsetY"
+            />
+        </template>
+        <template #aside>
+            <div class="mb-3">
+                <h3>Våning</h3>
+                <input type="number" v-model="floor">
+            </div>
+            <div class="mb-3">
+                <h2>Kartdelar</h2>
+                <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
+            </div>
+            <div
+            v-for="mapPart of data.mapParts"
+            :key="mapPart.id"
+            class="mb-3"
+            >
+                <h3>{{ mapPart.name }}</h3>
+                <button class="btn btn-primary" @click="currentMapPartId = mapPart.id">Redigera</button>
+                <br>
+                <input type="number" v-model="mapPart.offsetX">
+                <input type="number" v-model="mapPart.offsetY">
+            </div>
+        </template>
+    </MapEditorBase>
+
+    <!-- A selected map part. -->
     <MapPartEditor
         v-if="currentMapPartId"
-    />
-    <MapRelationEditor
-        v-if="!currentMapPartId"
+        :map-part-id="currentMapPartId"
+        @back="currentMapPartId = null"
     />
 </template>

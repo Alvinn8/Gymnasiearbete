@@ -8,14 +8,16 @@ from my_server.database_handler import create_connection
 @map_access_required
 def new_map_part(jwt, map_id):
 
-    name = request.json["name"]
+    json = request.get_json()
+    name = json["name"]
+    z = json["z"]
 
     conn = create_connection()
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT INTO MapPart (name, map_id) VALUES (?, ?)",
-        (name, map_id)
+        "INSERT INTO MapPart (name, z, map_id) VALUES (?, ?)",
+        (name, z, map_id)
     )
     map_part_id = cur.lastrowid
 
@@ -53,16 +55,15 @@ def map_part_info(jwt, map_id, part_id):
         (part_id, part_id)
     ).fetchall()
 
-    background_data = cur.execute(
-        "SELECT background, background_scale FROM MapPart WHERE id = ?",
+    map_part_data = cur.execute(
+        "SELECT name, background, background_scale, z FROM MapPart WHERE id = ?",
         (part_id,)
     ).fetchone()
 
-    background = None
-    background_scale = None
-    if background_data is not None:
-        background = background_data[0]
-        background_scale = background_data[1]
+    name = map_part_data[0]
+    background = map_part_data[1]
+    background_scale = map_part_data[2]
+    z = map_part_data[3]
 
     conn.close()
 
@@ -95,6 +96,8 @@ def map_part_info(jwt, map_id, part_id):
 
     return {
         "success": True,
+        "name": name,
+        "z": z,
         "walls": walls,
         "points": points,
         "point_connections": point_connections,
@@ -110,7 +113,7 @@ def map_part_brief_info(map_id, part_id):
     cur = conn.cursor()
 
     part_data = cur.execute(
-        "SELECT offset_x, offset_y FROM MapPart WHERE id = ?",
+        "SELECT offset_x, offset_y, name, z FROM MapPart WHERE id = ?",
         (part_id,)
     ).fetchone()
 
@@ -146,6 +149,8 @@ def map_part_brief_info(map_id, part_id):
 
     return {
         "success": True,
+        "name": part_data[2],
+        "z": part_data[3],
         "walls": walls,
         "points": points,
         "offsetX": part_data[0],
