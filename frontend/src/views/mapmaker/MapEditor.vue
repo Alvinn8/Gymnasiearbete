@@ -66,6 +66,7 @@ async function newPart() {
             id, name,
             offsetX: 0,
             offsetY: 0,
+            rotationDeg: 0,
             z: floor.value
         });
         currentMapPartId.value = id;
@@ -74,6 +75,14 @@ async function newPart() {
             icon: "success"
         });
     }
+}
+
+function updateOffset(mapPart: MapPartType) {
+    apiPost(`map/${route.params.map_id}/part/${mapPart.id}/update_offset`, {
+        offsetX: mapPart.offsetX,
+        offsetY: mapPart.offsetY,
+        rotationDeg: mapPart.rotationDeg
+    }).catch(handleError);
 }
 
 </script>
@@ -100,6 +109,7 @@ async function newPart() {
                 :map-part-id="mapPart.id"
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
+                :rotation-deg="mapPart.rotationDeg"
             />
         </template>
         <template #aside>
@@ -121,6 +131,11 @@ async function newPart() {
                 <br>
                 <input type="number" v-model="mapPart.offsetX">
                 <input type="number" v-model="mapPart.offsetY">
+                <input type="number" v-model="mapPart.rotationDeg">
+                <button
+                    class="btn btn-primary btn-sm"
+                    @click="() => updateOffset(mapPart)"
+                >Spara</button>
             </div>
         </template>
     </MapEditorBase>

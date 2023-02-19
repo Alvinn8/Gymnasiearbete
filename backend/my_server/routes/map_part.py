@@ -16,7 +16,7 @@ def new_map_part(jwt, map_id):
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT INTO MapPart (name, z, map_id) VALUES (?, ?)",
+        "INSERT INTO MapPart (name, z, map_id) VALUES (?, ?, ?)",
         (name, z, map_id)
     )
     map_part_id = cur.lastrowid
@@ -105,6 +105,7 @@ def map_part_info(jwt, map_id, part_id):
         "background_scale": background_scale
     }
 
+
 @app.route("/api/map/<map_id>/part/<part_id>/brief_info")
 @map_view_access
 def map_part_brief_info(map_id, part_id):
@@ -113,7 +114,7 @@ def map_part_brief_info(map_id, part_id):
     cur = conn.cursor()
 
     part_data = cur.execute(
-        "SELECT offset_x, offset_y, name, z FROM MapPart WHERE id = ?",
+        "SELECT offset_x, offset_y, name, z, rotation_deg FROM MapPart WHERE id = ?",
         (part_id,)
     ).fetchone()
 
@@ -154,10 +155,9 @@ def map_part_brief_info(map_id, part_id):
         "walls": walls,
         "points": points,
         "offsetX": part_data[0],
-        "offsetY": part_data[1]
+        "offsetY": part_data[1],
+        "rotationDeg": part_data[4]
     }
-
-
 
 
 @app.route("/api/map/<map_id>/part/<part_id>/background", methods=["POST"])
@@ -192,6 +192,30 @@ def map_part_background_scale(jwt, map_id, part_id):
     cur.execute(
         "UPDATE MapPart SET background_scale = ? WHERE id = ?",
         (scale, part_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+
+@app.route("/api/map/<map_id>/part/<part_id>/update_offset", methods=["POST"])
+@map_part_required
+def map_part_update_offset(jwt, map_id, part_id):
+    conn = create_connection()
+    cur = conn.cursor()
+
+    json = request.get_json()
+    offset_x = json["offsetX"]
+    offset_y = json["offsetY"]
+    rotation_deg = json["rotationDeg"]
+
+    cur.execute(
+        "UPDATE MapPart SET offset_x = ?, offset_y = ?, rotation_deg = ? WHERE id = ?",
+        (offset_x, offset_y, rotation_deg, part_id)
     )
 
     conn.commit()

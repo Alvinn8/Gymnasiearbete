@@ -52,4 +52,5 @@ export type MapPart = {
     z: number;
     offsetX: number;
     offsetY: number;
+    rotationDeg: number;
 };

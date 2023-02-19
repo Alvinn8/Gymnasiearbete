@@ -9,6 +9,7 @@ const props = defineProps<{
     mapPartId: number;
     offsetX: number;
     offsetY: number;
+    rotationDeg: number;
 }>();
 
 type Data = {
@@ -44,6 +45,7 @@ watch(
 <template>
     <div
         v-if="data"
+        :style="`transform: rotate(${rotationDeg}deg);`"
     >
         <MapWall
             v-for="wall of data.walls"

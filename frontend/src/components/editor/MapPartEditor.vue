@@ -21,12 +21,14 @@ const emit = defineEmits<{
     (e: "back"): void;
 }>();
 
-const name = ref<string | null>(null);
-const walls = ref<Wall[] | null>(null);
-const points = ref<Point[] | null>(null);
-const pointConnections  = ref<PointConnectionType[] | null>(null);
-const background = ref<string | null>(null);
-const backgroundScale = ref<number | null>(null);
+const data = ref<null | {
+    name: string;
+    walls: Wall[];
+    points: Point[];
+    pointConnections: PointConnectionType[];
+    background: string | null;
+    backgroundScale: number;
+}>();
 
 const route = useRoute();
 
@@ -42,24 +44,26 @@ watch(props, async () => {
         .catch(handleError);
     if (!info) return;
 
-    name.value = info.name;
-    walls.value = info.walls;
-    points.value = info.points;
-    background.value = info.background;
-    backgroundScale.value = info.background_scale;
-    pointConnections.value = info.point_connections.map((pointConnection: any) => {
-        const pointA = points.value?.find(point => point.id === pointConnection.point_a_id);
-        const pointB = points.value?.find(point => point.id === pointConnection.point_b_id);
-        if (pointA && pointB) {
-            return {
-                id: pointConnection.id,
-                point_a: pointA,
-                point_b: pointB,
-                weight: pointConnection.weight
-            };
-        }
-        return null;
-    }).filter((c: any) => !!c); // Remove any null items
+    data.value = {
+        name: info.name,
+        walls: info.walls,
+        points: info.points,
+        background: info.background,
+        backgroundScale: info.background_scale,
+        pointConnections: info.point_connections.map((pointConnection: any) => {
+            const pointA = info.points.find((point: Point) => point.id === pointConnection.point_a_id);
+            const pointB = info.points.find((point: Point) => point.id === pointConnection.point_b_id);
+            if (pointA && pointB) {
+                return {
+                    id: pointConnection.id,
+                    point_a: pointA,
+                    point_b: pointB,
+                    weight: pointConnection.weight
+                };
+            }
+            return null;
+        }).filter((c: any) => !!c) // Remove any null items
+    };
 }, { immediate: true });
 
 const changedWalls: Set<Wall> = new Set();
@@ -68,7 +72,7 @@ let pendingChangesId: number | null = null;
 
 function updateWall(wallId: number, property: DimensionsProperty, value: number) {
     // Find the wall in question
-    const wall = walls.value?.find(w => w.id === wallId);
+    const wall = data.value?.walls.find(w => w.id === wallId);
     if (!wall) return;
     
     // Update the wall
@@ -83,7 +87,7 @@ function updateWall(wallId: number, property: DimensionsProperty, value: number)
 
 function updatePoint(pointId: number, property: keyof Position, value: number) {
     // Find the point in question
-    const point = points.value?.find(p => p.id === pointId);
+    const point = data.value?.points.find(point => point.id === pointId);
     if (!point) return;
 
     // Update the point
@@ -148,56 +152,75 @@ onUnmounted(() => {
     window.removeEventListener("beforeunload", beforeUnload);
 });
 
+function changeBackgroundScale(newScale: number) {
+    if (!data.value) return;
+
+    const oldScale = data.value.backgroundScale;
+    const scaleFactor = newScale / oldScale;
+    data.value.backgroundScale = newScale;
+    data.value.walls.forEach(wall => {
+        updateWall(wall.id, "x", wall.x * scaleFactor);
+        updateWall(wall.id, "y", wall.y * scaleFactor);
+        updateWall(wall.id, "width", wall.width * scaleFactor);
+        updateWall(wall.id, "height", wall.height * scaleFactor);
+    });
+    data.value.points.forEach(point => {
+        updatePoint(point.id, "x", point.x * scaleFactor);
+        updatePoint(point.id, "y", point.y * scaleFactor);
+    });
+}
+
 </script>
 
 <template>
     <MapEditorBase>
         <template #aside>
-            <h2>{{ name }}</h2>
+            <h2>{{ data?.name }}</h2>
             <button class="btn btn-primary mx-1" @click="emit('back')">Tillbaka</button>
             <NewWall
-                @new-wall="(wall) => walls?.push(wall)"
+                @new-wall="(wall) => data?.walls.push(wall)"
             />
             <NewPoint
-                @new-point="(point) => points?.push(point)"
+                @new-point="(point) => data?.points.push(point)"
             />
             <ChangeBackground
-                :scale="backgroundScale"
-                @change-background="(newBackground) => background = newBackground"
-                @change-scale="(scale) => backgroundScale = scale"
+                v-if="data"
+                :scale="data.backgroundScale"
+                @change-background="(newBackground) => data && (data.background = newBackground)"
+                @change-scale="changeBackgroundScale"
             />
         </template>
         <template #panzoom>
             <img
-                v-if="background"
-                :src="background"
+                v-if="data && data.background"
+                :src="data.background"
                 alt="Bakgrund"
-                :style="`transform: scale(${backgroundScale});`"
+                :style="`transform: scale(${data.backgroundScale}); transform-origin: top left;`"
             >
-            <div v-if="walls">
+            <div v-if="data">
                 <!-- Render the walls. -->
                 <EditableWall
-                    v-for="wall of walls"
+                    v-for="wall of data.walls"
                     :key="wall.id"
                     :x="wall.x" :y="wall.y"
                     :width="wall.width" :height="wall.height"
                     @change="(property, value) => updateWall(wall.id, property, value)"
-                    @copy="(wall) => walls?.push(wall)"
+                    @copy="(wall) => data && data.walls.push(wall)"
                 />
                 <!-- Render points. -->
                 <EditablePoint
-                    v-for="point of points"
+                    v-for="point of data.points"
                     :key="point.id"
                     :x="point.x"
                     :y="point.y"
                     @change="(property, value) => updatePoint(point.id, property, value)"
-                    @copy="(point) => points?.push(point)"
+                    @copy="(point) => data && data.points.push(point)"
                     @click="() => connectionCallbacks.clickPoint(point)"
                     @right-click="(e) => connectionCallbacks.rightClickPoint(e, point)"
                 />
                 <!-- Render connections between points. -->
                 <PointConnection
-                    v-for="pointConnection of pointConnections"
+                    v-for="pointConnection of data.pointConnections"
                     :key="pointConnection.id"
                     :point_a="pointConnection.point_a"
                     :point_b="pointConnection.point_b"
@@ -208,7 +231,7 @@ onUnmounted(() => {
                         connectionCallbacks.clickPoint = clickPoint;
                         connectionCallbacks.rightClickPoint = rightClickPoint;
                     }"
-                    @new-connection="(connection) => pointConnections?.push(connection)"
+                    @new-connection="(connection) => data && data.pointConnections.push(connection)"
                 />
             </div>
         </template>

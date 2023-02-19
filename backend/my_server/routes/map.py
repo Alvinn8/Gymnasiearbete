@@ -114,7 +114,7 @@ def map_info(jwt, map_id):
     ).fetchone()
 
     map_parts_data = cur.execute(
-        "SELECT id, name, offset_x, offset_y, z FROM MapPart WHERE map_id = ?",
+        "SELECT id, name, offset_x, offset_y, rotation_deg, z FROM MapPart WHERE map_id = ?",
         (map_id,)
     ).fetchall()
 
@@ -127,7 +127,8 @@ def map_info(jwt, map_id):
             "name": map_part_data[1],
             "offsetX": map_part_data[2],
             "offsetY": map_part_data[3],
-            "z": map_part_data[4]
+            "rotationDeg": map_part_data[4],
+            "z": map_part_data[5]
         })
 
     return {
@@ -137,6 +138,7 @@ def map_info(jwt, map_id):
             "mapParts": map_parts
         }
     }
+
 
 @app.route("/api/map/<map_id>/view")
 @map_view_access
@@ -151,7 +153,7 @@ def view_map(map_id):
     ).fetchone()
 
     map_parts_data = cur.execute(
-        "SELECT id, name, offset_x, offset_y FROM MapPart WHERE map_id = ?",
+        "SELECT id, name, offset_x, offset_y, rotation_deg FROM MapPart WHERE map_id = ?",
         (map_id,)
     ).fetchall()
 
@@ -165,7 +167,8 @@ def view_map(map_id):
             "id": map_part_id,
             "name": map_part_data[1],
             "offsetX": map_part_data[2],
-            "offsetY": map_part_data[3]
+            "offsetY": map_part_data[3],
+            "rotationDeg": map_part_data[4]
         })
 
     return {

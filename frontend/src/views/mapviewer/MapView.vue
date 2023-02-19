@@ -3,18 +3,14 @@ import { apiGet, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
+import type { MapPart as MapPartType } from "@/types";
 import Swal from "sweetalert2";
 import { reactive, watch } from "vue";
 import { useRoute } from "vue-router";
 
 interface Data {
     name: string;
-    mapParts: {
-        id: number;
-        name: string;
-        offsetX: number;
-        offsetY: number;
-    }[];
+    mapParts: MapPartType[];
 }
 
 const route = useRoute();
@@ -61,6 +57,7 @@ watch(
                 :map-part-id="mapPart.id"
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
+                :rotation-deg="mapPart.rotationDeg"
             />
         </PanZoom>
     </div>
