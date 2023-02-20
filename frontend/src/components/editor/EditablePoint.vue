@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { apiPost, handleError } from "@/api/api";
 import useMovement from "@/composables/movement";
+import { useSelection } from "@/stores/selection";
 import type { Point, Room } from "@/types";
 import Swal from "sweetalert2";
 import { inject } from "vue";
@@ -71,6 +72,9 @@ const movement = useMovement({
         }
     }
 });
+
+const selection = useSelection();
+
 const route = useRoute();
 const mapPartId = inject(mapPartIdKey);
 

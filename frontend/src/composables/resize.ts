@@ -1,3 +1,4 @@
+import { MOVEMENT_GRID_DISTANCE } from "@/constants";
 import type { Dimensions } from "@/types";
 import { onUnmounted } from "vue";
 import type { UseMovementArguments } from "./movement";
@@ -22,30 +23,30 @@ export default function useResize({
     function handleKeyPress(e: KeyboardEvent) {
         e.preventDefault();
     
-        let distance = 10;
+        let distance = MOVEMENT_GRID_DISTANCE;
         if (e.shiftKey) {
-            distance = -10;
+            distance = -distance;
         }
 
         switch (e.key.toLowerCase()) {
 
         // Resizing the object
         case "i": {
-            if (dimensions.height > distance) {
+            if (dimensions.height + distance > 0) {
                 onChange("y", dimensions.y - distance);
                 onChange("height", dimensions.height + distance);
             }
             break;
         }
         case "j": {
-            if (dimensions.width > distance) {
+            if (dimensions.width + distance > 0) {
                 onChange("x", dimensions.x - distance);
                 onChange("width", dimensions.width + distance);
             }
             break;
         }
-        case "k": onChange("height", Math.max(10, dimensions.height + distance)); break;
-        case "l": onChange("width", Math.max(10, dimensions.width + distance)); break;
+        case "k": onChange("height", Math.max(1, dimensions.height + distance)); break;
+        case "l": onChange("width", Math.max(1, dimensions.width + distance)); break;
 
         }
     }

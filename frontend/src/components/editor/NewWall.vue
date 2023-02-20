@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { apiPost, handleError } from "@/api/api";
+import { DEFAULT_WALL_WIDTH } from "@/constants";
 import type { Wall } from "@/types";
 import { inject } from "vue";
 import { useRoute } from "vue-router";
@@ -22,7 +23,7 @@ async function newWall() {
         id: res.id,
         x: 0,
         y: 0,
-        width: 10,
+        width: DEFAULT_WALL_WIDTH,
         height: 40
     };
 

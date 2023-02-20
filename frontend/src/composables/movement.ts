@@ -41,8 +41,8 @@ export default function useMovement({
         let newX = moveStart.thisX + diffX;
         let newY = moveStart.thisY + diffY;
         if (!e.shiftKey) {
-            newX = Math.floor(newX / 10) * 10;
-            newY = Math.floor(newY / 10) * 10;
+            newX = Math.floor(newX / 1) * 1;
+            newY = Math.floor(newY / 1) * 1;
         }
         onChange("x", newX);
         onChange("y", newY);
@@ -70,9 +70,9 @@ export default function useMovement({
     function handleKeyPress(e: KeyboardEvent) {
         e.preventDefault();
     
-        let distance = 10;
+        let distance = 1;
         if (e.shiftKey) {
-            distance = -10;
+            distance = -distance;
         }
 
         switch (e.key.toLowerCase()) {

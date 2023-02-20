@@ -147,3 +147,9 @@ function updateOffset(mapPart: MapPartType) {
         @back="currentMapPartId = null"
     />
 </template>
+
+<style scoped>
+input {
+    max-width: 80px;
+}
+</style>

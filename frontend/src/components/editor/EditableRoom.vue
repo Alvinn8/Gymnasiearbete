@@ -56,7 +56,7 @@ span {
     color: white;
     padding: 3px;
     border-radius: 5px;
-    font-size: 25px;
+    font-size: 12px;
 }
 .hover {
     background-color: rgba(0, 0, 0, 0.3);
