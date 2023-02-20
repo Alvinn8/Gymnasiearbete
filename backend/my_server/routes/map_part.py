@@ -55,6 +55,13 @@ def map_part_info(jwt, map_id, part_id):
         (part_id, part_id)
     ).fetchall()
 
+    rooms_data = cur.execute(
+        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height FROM Room " +
+        "JOIN Point ON Point.id = door_at_point_id " +
+        "WHERE Point.map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
     map_part_data = cur.execute(
         "SELECT name, background, background_scale, z FROM MapPart WHERE id = ?",
         (part_id,)
@@ -94,12 +101,25 @@ def map_part_info(jwt, map_id, part_id):
             "weight": point_connection[3]
         })
 
+    rooms = []
+    for room_data in rooms_data:
+        rooms.append({
+            "id": room_data[0],
+            "hasDoorAtPointId": room_data[1],
+            "name": room_data[2],
+            "x": room_data[3],
+            "y": room_data[4],
+            "width": room_data[5],
+            "height": room_data[6]
+        })
+
     return {
         "success": True,
         "name": name,
         "z": z,
         "walls": walls,
         "points": points,
+        "rooms": rooms,
         "point_connections": point_connections,
         "background": background,
         "background_scale": background_scale
@@ -128,6 +148,13 @@ def map_part_brief_info(map_id, part_id):
         (part_id,)
     ).fetchall()
 
+    rooms_data = cur.execute(
+        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height FROM Room " +
+        "JOIN Point ON Point.id = door_at_point_id " +
+        "WHERE Point.map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
     conn.close()
 
     walls = []
@@ -148,12 +175,25 @@ def map_part_brief_info(map_id, part_id):
             "y": point_data[2]
         })
 
+    rooms = []
+    for room_data in rooms_data:
+        rooms.append({
+            "id": room_data[0],
+            "hasDoorAtPointId": room_data[1],
+            "name": room_data[2],
+            "x": room_data[3],
+            "y": room_data[4],
+            "width": room_data[5],
+            "height": room_data[6]
+        })
+
     return {
         "success": True,
         "name": part_data[2],
         "z": part_data[3],
         "walls": walls,
         "points": points,
+        "rooms": rooms,
         "offsetX": part_data[0],
         "offsetY": part_data[1],
         "rotationDeg": part_data[4]

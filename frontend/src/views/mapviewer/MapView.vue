@@ -46,9 +46,6 @@ watch(
 </script>
 
 <template>
-    <p>hello</p>
-    <p>{{ data.name }}</p>
-    <p>{{ JSON.stringify(data.mapParts) }}</p>
     <div class="container-fluid">
         <PanZoom>
             <MapPart

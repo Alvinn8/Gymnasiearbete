@@ -9,13 +9,17 @@ export type UseMovementArguments = {
     onChange(property: keyof Position, value: number): void
     /** Called when the object is copied. */
     onCopy(): void;
+    /** An object containing custom keybind logic. */
+    customKeybinds?: {
+        [key: string]: () => void;
+    }
 };
 
 /**
  * A Vue.js composeable for sharing movement logic between components.
  */
 export default function useMovement({
-    dimensions, onChange, onCopy
+    dimensions, onChange, onCopy, customKeybinds
 }: UseMovementArguments) {
 
     // Drag to move
@@ -80,6 +84,11 @@ export default function useMovement({
 
         // Copying the object
         case "c": onCopy(); break;
+        }
+
+        if (customKeybinds) {
+            const handler = customKeybinds[e.key.toLowerCase()];
+            if (handler) handler();
         }
     }
 

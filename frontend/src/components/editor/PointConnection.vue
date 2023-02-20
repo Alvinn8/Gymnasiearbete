@@ -38,6 +38,6 @@ div {
     background-color: #3d73e0;
     height: 2px;
     transform-origin: left;
-    z-index: 2;
+    z-index: 3;
 }
 </style>

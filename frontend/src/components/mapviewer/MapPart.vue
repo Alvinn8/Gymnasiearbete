@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { apiGet, handleError } from "@/api/api";
-import type { Point, Wall } from "@/types";
+import type { Point, Room, Wall } from "@/types";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import MapRoom from "./MapRoom.vue";
 import MapWall from "./MapWall.vue";
 
 const props = defineProps<{
@@ -15,6 +16,7 @@ const props = defineProps<{
 type Data = {
     walls: Wall[];
     points: Point[];
+    rooms: Room[];
     offsetX: number;
     offsetY: number;
 };
@@ -33,6 +35,7 @@ watch(
         data.value = {
             walls: info.walls,
             points: info.points,
+            rooms: info.rooms,
             offsetX: info.offsetX,
             offsetY: info.offsetY
         };
@@ -54,6 +57,16 @@ watch(
             :y="wall.y + offsetY"
             :width="wall.width"
             :height="wall.height"
+        />
+
+        <MapRoom
+            v-for="room of data.rooms"
+            :key="room.id"
+            :name="room.name"
+            :x="room.x + offsetX"
+            :y="room.y + offsetY"
+            :width="room.width"
+            :height="room.height"
         />
     </div>
 </template>

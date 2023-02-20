@@ -54,3 +54,7 @@ export type MapPart = {
     offsetY: number;
     rotationDeg: number;
 };
+
+export type Room = Identifiable & Dimensions & {
+    name: string;
+}

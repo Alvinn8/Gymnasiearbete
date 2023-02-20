@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
-import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType } from "@/types";
+import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room } from "@/types";
 import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import ChangeBackground from "./ChangeBackground.vue";
 import EditablePoint from "./EditablePoint.vue";
 import EditableWall from "./EditableWall.vue";
+import EditableRoom from "./EditableRoom.vue";
 import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
 import PointConnection from "./PointConnection.vue";
@@ -25,6 +26,7 @@ const data = ref<null | {
     name: string;
     walls: Wall[];
     points: Point[];
+    rooms: Room[];
     pointConnections: PointConnectionType[];
     background: string | null;
     backgroundScale: number;
@@ -48,6 +50,7 @@ watch(props, async () => {
         name: info.name,
         walls: info.walls,
         points: info.points,
+        rooms: info.rooms,
         background: info.background,
         backgroundScale: info.background_scale,
         pointConnections: info.point_connections.map((pointConnection: any) => {
@@ -68,6 +71,7 @@ watch(props, async () => {
 
 const changedWalls: Set<Wall> = new Set();
 const changedPoints: Set<Point> = new Set();
+const changedRooms: Set<Room> = new Set();
 let pendingChangesId: number | null = null;
 
 function updateWall(wallId: number, property: DimensionsProperty, value: number) {
@@ -95,6 +99,21 @@ function updatePoint(pointId: number, property: keyof Position, value: number) {
 
     // Add to the set of changes
     changedPoints.add(point);
+
+    // And save when its time
+    saveWithDebounce();
+}
+
+function updateRoom(roomId: number, property: DimensionsProperty, value: number) {
+    // Find the room
+    const room = data.value?.rooms.find(room => room.id === roomId);
+    if (!room) return;
+
+    // Update the point
+    room[property] = value;
+
+    // Add to the set of changes
+    changedRooms.add(room);
 
     // And save when its time
     saveWithDebounce();
@@ -129,6 +148,17 @@ function saveWithDebounce() {
             
             // Clear the set of changed points, they are now up-to-date
             changedPoints.clear();
+        }
+
+        if (changedRooms.size > 0) {
+            // Write to database
+            await apiPost(`map/${route.params.map_id}/part/${props.mapPartId}/room/edit`, {
+                // Convert the set into an array
+                changes: [...changedRooms.values()]
+            }).catch(handleError);
+
+            // Clear the set of changes as they are now up-to-date
+            changedRooms.clear();
         }
 
         // Log
@@ -211,12 +241,14 @@ function changeBackgroundScale(newScale: number) {
                 <EditablePoint
                     v-for="point of data.points"
                     :key="point.id"
+                    :id="point.id"
                     :x="point.x"
                     :y="point.y"
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => data && data.points.push(point)"
                     @click="() => connectionCallbacks.clickPoint(point)"
                     @right-click="(e) => connectionCallbacks.rightClickPoint(e, point)"
+                    @new-room="(room) => data && data.rooms.push(room)"
                 />
                 <!-- Render connections between points. -->
                 <PointConnection
@@ -224,6 +256,17 @@ function changeBackgroundScale(newScale: number) {
                     :key="pointConnection.id"
                     :point_a="pointConnection.point_a"
                     :point_b="pointConnection.point_b"
+                />
+                <!-- Render rooms -->
+                <EditableRoom
+                    v-for="room of data.rooms"
+                    :key="room.id"
+                    :name="room.name"
+                    :x="room.x"
+                    :y="room.y"
+                    :width="room.width"
+                    :height="room.height"
+                    @change="(property, value) => updateRoom(room.id, property, value)"
                 />
                 <!-- This component handles creating new connections. -->
                 <ConnectLine
