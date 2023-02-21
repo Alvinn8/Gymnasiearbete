@@ -1,4 +1,5 @@
 import { panzoomKey } from "@/components/keys";
+import { useSelection, type SelectionType } from "@/stores/selection";
 import type { Position } from "@/types";
 import { inject, onUnmounted, ref } from "vue";
 
@@ -9,6 +10,12 @@ export type UseMovementArguments = {
     onChange(property: keyof Position, value: number): void
     /** Called when the object is copied. */
     onCopy(): void;
+    /** The type of selection. */
+    selection: {
+        type: SelectionType;
+        id: number;
+        // TODO
+    }
     /** An object containing custom keybind logic. */
     customKeybinds?: {
         [key: string]: () => void;
@@ -19,7 +26,7 @@ export type UseMovementArguments = {
  * A Vue.js composeable for sharing movement logic between components.
  */
 export default function useMovement({
-    dimensions, onChange, onCopy, customKeybinds
+    dimensions, onChange, onCopy, customKeybinds, selectionType
 }: UseMovementArguments) {
 
     // Drag to move
@@ -92,10 +99,10 @@ export default function useMovement({
         }
     }
 
-    const hovered = ref(false);
+    const selection = useSelection(selectionType);
 
     function mouseOver() {
-        hovered.value = true;
+        selection.select();
         document.body.addEventListener("keypress", handleKeyPress);
     }
 

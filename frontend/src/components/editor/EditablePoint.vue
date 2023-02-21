@@ -73,7 +73,7 @@ const movement = useMovement({
     }
 });
 
-const selection = useSelection();
+const selection = useSelection("point");
 
 const route = useRoute();
 const mapPartId = inject(mapPartIdKey);
@@ -98,11 +98,11 @@ async function copyPoint() {
 <template>
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
-        :class="movement.hovered.value ? 'hover' : null"
+        :class="(movement.hovered.value || selection.selected.value === id) ? 'hover' : null"
         @mouseover="movement.mouseover"
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
-        @click="emit('click')"
+        @click="() => { emit('click'); selection.select(id) }"
         @contextmenu.prevent="(e) => emit('right-click', e)"
     ></div>
 </template>
