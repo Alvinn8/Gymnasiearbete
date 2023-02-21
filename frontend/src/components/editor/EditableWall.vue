@@ -64,9 +64,8 @@ async function copyWall() {
                   width: ${width}px;
                   height: ${height}px;`"
         :class="selection.selected.value ? 'hover' : null"
-        @mouseover="movement.mouseover"
-        @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
+        @click="selection.select()"
     ></div>
 </template>
 

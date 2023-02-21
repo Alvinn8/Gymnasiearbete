@@ -102,15 +102,6 @@ export default function useMovement({
             document.body.removeEventListener("keypress", handleKeyPress);
         }
     });
-
-    function mouseOver() {
-        selection.select();
-    }
-
-    function mouseLeave() {
-        // selection.deselect();
-    }
-
     
     onUnmounted(() => {
         document.body.removeEventListener("keypress", handleKeyPress);
@@ -119,8 +110,6 @@ export default function useMovement({
     });
 
     return {
-        mousedown: mouseDown,
-        mouseover: mouseOver,
-        mouseout: mouseLeave
+        mousedown: mouseDown
     };
 }

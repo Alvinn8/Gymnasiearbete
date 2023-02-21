@@ -64,6 +64,7 @@ const movement = useMovement({
                 allowOutsideClick: () => !Swal.isLoading()
             });
             if (!res.value) return;
+            selection.deselect();
             emit("new-room", {
                 id: res.value.id,
                 name: res.value.name,
@@ -100,8 +101,6 @@ async function copyPoint() {
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
         :class="selection.selected.value ? 'hover' : null"
-        @mouseover="movement.mouseover"
-        @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
         @click="() => { emit('click'); selection.select() }"
         @contextmenu.prevent="(e) => emit('right-click', e)"

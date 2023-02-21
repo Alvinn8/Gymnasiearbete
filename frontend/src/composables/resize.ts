@@ -1,12 +1,15 @@
 import { MOVEMENT_GRID_DISTANCE } from "@/constants";
+import type { SelectionWithId } from "@/stores/selection";
 import type { Dimensions } from "@/types";
-import { onUnmounted } from "vue";
+import { onUnmounted, watch } from "vue";
 import type { UseMovementArguments } from "./movement";
 import useMovement from "./movement";
 
 export type UseResizeArguments = {
     /** An object containing the current dimensions. */
     dimensions: Dimensions;
+    /** The selection. */
+    selection: SelectionWithId;
     /** Called when a property changes. */
     onChange(property: keyof Dimensions, value: number): void
 };
@@ -15,7 +18,7 @@ export type UseResizeArguments = {
  * A Vue.js composeable for sharing resizing logic between components.
  */
 export default function useResize({
-    dimensions, onChange
+    dimensions, onChange, selection
 }: UseResizeArguments) {
 
     // Keyboard shortcuts
@@ -51,22 +54,17 @@ export default function useResize({
         }
     }
 
-    function mouseOver() {
-        document.body.addEventListener("keypress", handleKeyPress);
-    }
-
-    function mouseLeave() {
-        document.body.removeEventListener("keypress", handleKeyPress);
-    }
+    watch(selection.selected, (newValue) => {
+        if (newValue) {
+            document.body.addEventListener("keypress", handleKeyPress);
+        } else {
+            document.body.removeEventListener("keypress", handleKeyPress);
+        }
+    });
 
     onUnmounted(() => {
         document.body.removeEventListener("keypress", handleKeyPress);
     });
-
-    return {
-        mouseover: mouseOver,
-        mouseout: mouseLeave
-    };
 }
 
 /**
@@ -74,12 +72,9 @@ export default function useResize({
  */
 export function useMovementAndResize(options: UseMovementArguments & UseResizeArguments) {
     const movement = useMovement(options);
-    const resize = useResize(options);
+    useResize(options);
 
     return {
-        mousedown: movement.mousedown,
-        // Merge the event listeners
-        mouseover: () => { movement.mouseover(); resize.mouseover(); },
-        mouseout: () => { movement.mouseout(); resize.mouseout(); }
+        mousedown: movement.mousedown
     };
 }
