@@ -1,4 +1,6 @@
 import { panzoomKey } from "@/components/keys";
+import { FAST_MOVEMENT_MULTIPLIER } from "@/constants";
+import { pressing } from "@/keyboard";
 import type { SelectionWithId } from "@/stores/selection";
 import type { Position } from "@/types";
 import { inject, onUnmounted, watch, } from "vue";
@@ -43,10 +45,8 @@ export default function useMovement({
         const diffY = (e.clientY - moveStart.mouseY) / scale;
         let newX = moveStart.thisX + diffX;
         let newY = moveStart.thisY + diffY;
-        if (!e.shiftKey) {
-            newX = Math.floor(newX / 1) * 1;
-            newY = Math.floor(newY / 1) * 1;
-        }
+        newX = Math.floor(newX / 1) * 1;
+        newY = Math.floor(newY / 1) * 1;
         onChange("x", newX);
         onChange("y", newY);
     }
@@ -74,8 +74,11 @@ export default function useMovement({
         e.preventDefault();
     
         let distance = 1;
-        if (e.shiftKey) {
+        if (pressing.leftShift()) {
             distance = -distance;
+        }
+        if (pressing.rightShift()) {
+            distance *= FAST_MOVEMENT_MULTIPLIER;
         }
 
         switch (e.key.toLowerCase()) {
@@ -101,7 +104,7 @@ export default function useMovement({
         } else {
             document.body.removeEventListener("keypress", handleKeyPress);
         }
-    });
+    }, { immediate: true });
     
     onUnmounted(() => {
         document.body.removeEventListener("keypress", handleKeyPress);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { apiPost, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
+import { DEFAULT_WALL_WIDTH } from "@/constants";
 import { useSelection } from "@/stores/selection";
 import type { DimensionsProperty, Wall } from "@/types";
 import { inject, toRef } from "vue";
@@ -36,7 +37,17 @@ const movement = useMovementAndResize({
     dimensions: props,
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
-    onCopy: () => copyWall()
+    onCopy: () => copyWall(),
+    customKeybinds: {
+        "q": () => {
+            if (props.width <= props.height) {
+                emit("change", "width", DEFAULT_WALL_WIDTH);
+            }
+            if (props.height <= props.width) {
+                emit("change", "height", DEFAULT_WALL_WIDTH);
+            }
+        }
+    }
 });
 
 async function copyWall() {
@@ -64,8 +75,7 @@ async function copyWall() {
                   width: ${width}px;
                   height: ${height}px;`"
         :class="selection.selected.value ? 'hover' : null"
-        @mousedown="movement.mousedown"
-        @click="selection.select()"
+        @mousedown="(e) => { movement.mousedown(e); selection.select(); }"
     ></div>
 </template>
 

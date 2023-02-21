@@ -17,8 +17,6 @@ type Data = {
     walls: Wall[];
     points: Point[];
     rooms: Room[];
-    offsetX: number;
-    offsetY: number;
 };
 
 const data = ref<Data | null>(null);
@@ -35,9 +33,7 @@ watch(
         data.value = {
             walls: info.walls,
             points: info.points,
-            rooms: info.rooms,
-            offsetX: info.offsetX,
-            offsetY: info.offsetY
+            rooms: info.rooms
         };
     },
     { immediate: true }
@@ -70,3 +66,12 @@ watch(
         />
     </div>
 </template>
+
+<style scoped>
+div {
+    /* Avoid the image moving around weirdly when it is rotated. Overflow is
+       enabled anyways, so the content is still visible. */
+    width: 0px;
+    height: 0px;
+}
+</style>

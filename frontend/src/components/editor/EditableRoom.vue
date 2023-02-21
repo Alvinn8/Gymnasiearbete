@@ -38,7 +38,7 @@ const movement = useMovementAndResize({
                   width: ${width}px;
                   height: ${height}px;`"
         :class="selection.selected.value ? 'hover' : null"
-        @mousedown="movement.mousedown"
+        @mousedown="(e) => { movement.mousedown(e); selection.select() }"
     >
         <span>{{ name }}</span>
     </div>

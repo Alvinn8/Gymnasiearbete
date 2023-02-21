@@ -1,4 +1,5 @@
-import { MOVEMENT_GRID_DISTANCE } from "@/constants";
+import { FAST_MOVEMENT_MULTIPLIER, MOVEMENT_GRID_DISTANCE } from "@/constants";
+import { pressing } from "@/keyboard";
 import type { SelectionWithId } from "@/stores/selection";
 import type { Dimensions } from "@/types";
 import { onUnmounted, watch } from "vue";
@@ -27,8 +28,11 @@ export default function useResize({
         e.preventDefault();
     
         let distance = MOVEMENT_GRID_DISTANCE;
-        if (e.shiftKey) {
+        if (pressing.leftShift()) {
             distance = -distance;
+        }
+        if (pressing.rightShift()) {
+            distance *= FAST_MOVEMENT_MULTIPLIER;
         }
 
         switch (e.key.toLowerCase()) {
@@ -60,7 +64,7 @@ export default function useResize({
         } else {
             document.body.removeEventListener("keypress", handleKeyPress);
         }
-    });
+    }, { immediate: true });
 
     onUnmounted(() => {
         document.body.removeEventListener("keypress", handleKeyPress);

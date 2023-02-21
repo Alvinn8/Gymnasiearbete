@@ -45,6 +45,7 @@ const movement = useMovement({
     onCopy: () => copyPoint(),
     customKeybinds: {
         "r": async () => {
+            selection.deselect();
             const res = await Swal.fire({
                 title: "Skapa nytt rum",
                 text: "Namnge rummet",
@@ -64,15 +65,18 @@ const movement = useMovement({
                 allowOutsideClick: () => !Swal.isLoading()
             });
             if (!res.value) return;
-            selection.deselect();
+            const roomId = res.value.id as number;
+            const roomName = res.value.name as string;
             emit("new-room", {
-                id: res.value.id,
-                name: res.value.name,
+                id: roomId,
+                name: roomName,
                 x: props.x - 10,
                 y: props.y - 10,
                 width: 20,
                 height: 20
             });
+            const roomSelection = useSelection("room");
+            roomSelection.select(roomId);
         }
     }
 });
@@ -101,8 +105,8 @@ async function copyPoint() {
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
         :class="selection.selected.value ? 'hover' : null"
-        @mousedown="movement.mousedown"
-        @click="() => { emit('click'); selection.select() }"
+        @mousedown="(e) => { movement.mousedown(e); selection.select() }"
+        @click="emit('click')"
         @contextmenu.prevent="(e) => emit('right-click', e)"
     ></div>
 </template>
