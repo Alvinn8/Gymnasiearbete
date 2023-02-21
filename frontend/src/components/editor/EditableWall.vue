@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { apiPost, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
+import { useSelection } from "@/stores/selection";
 import type { DimensionsProperty, Wall } from "@/types";
-import { inject } from "vue";
+import { inject, toRef } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
 const props = defineProps<{
+    id: number;
     x: number;
     y: number;
     width: number;
@@ -28,8 +30,11 @@ const emit = defineEmits<{
 const mapPartId = inject(mapPartIdKey);
 const route = useRoute();
 
+const selection = useSelection("wall", toRef(props, "id"));
+
 const movement = useMovementAndResize({
     dimensions: props,
+    selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => copyWall()
 });
@@ -58,7 +63,7 @@ async function copyWall() {
                   top: ${y}px;
                   width: ${width}px;
                   height: ${height}px;`"
-        :class="movement.hovered.value ? 'hover' : null"
+        :class="selection.selected.value ? 'hover' : null"
         @mouseover="movement.mouseover"
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"

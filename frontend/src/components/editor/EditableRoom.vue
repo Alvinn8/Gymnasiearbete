@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { useMovementAndResize } from "@/composables/resize";
+import { useSelection } from "@/stores/selection";
 import type { DimensionsProperty } from "@/types";
+import { toRef } from "vue";
 
 
 const props = defineProps<{
+    id: number;
     name: string;
     x: number;
     y: number;
@@ -18,8 +21,11 @@ const emit = defineEmits<{
     (e: "change", property: DimensionsProperty, value: number): void;
 }>();
 
+const selection = useSelection("room", toRef(props, "id"));
+
 const movement = useMovementAndResize({
     dimensions: props,
+    selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => {}
 });
@@ -31,7 +37,7 @@ const movement = useMovementAndResize({
                   top: ${y}px;
                   width: ${width}px;
                   height: ${height}px;`"
-        :class="movement.hovered.value ? 'hover' : null"
+        :class="selection.selected.value ? 'hover' : null"
         @mouseover="movement.mouseover"
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"

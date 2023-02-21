@@ -4,7 +4,7 @@ import useMovement from "@/composables/movement";
 import { useSelection } from "@/stores/selection";
 import type { Point, Room } from "@/types";
 import Swal from "sweetalert2";
-import { inject } from "vue";
+import { inject, toRef } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
@@ -36,8 +36,11 @@ const emit = defineEmits<{
     (e: "new-room", room: Room): void;
 }>();
 
+const selection = useSelection("point", toRef(props, "id"));
+
 const movement = useMovement({
     dimensions: props,
+    selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => copyPoint(),
     customKeybinds: {
@@ -73,8 +76,6 @@ const movement = useMovement({
     }
 });
 
-const selection = useSelection("point");
-
 const route = useRoute();
 const mapPartId = inject(mapPartIdKey);
 
@@ -98,11 +99,11 @@ async function copyPoint() {
 <template>
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
-        :class="(movement.hovered.value || selection.selected.value === id) ? 'hover' : null"
+        :class="selection.selected.value ? 'hover' : null"
         @mouseover="movement.mouseover"
         @mouseout="movement.mouseout"
         @mousedown="movement.mousedown"
-        @click="() => { emit('click'); selection.select(id) }"
+        @click="() => { emit('click'); selection.select() }"
         @contextmenu.prevent="(e) => emit('right-click', e)"
     ></div>
 </template>

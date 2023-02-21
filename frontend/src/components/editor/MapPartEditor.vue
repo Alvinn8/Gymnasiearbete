@@ -232,6 +232,7 @@ function changeBackgroundScale(newScale: number) {
                 <EditableWall
                     v-for="wall of data.walls"
                     :key="wall.id"
+                    :id="wall.id"
                     :x="wall.x" :y="wall.y"
                     :width="wall.width" :height="wall.height"
                     @change="(property, value) => updateWall(wall.id, property, value)"
@@ -261,6 +262,7 @@ function changeBackgroundScale(newScale: number) {
                 <EditableRoom
                     v-for="room of data.rooms"
                     :key="room.id"
+                    :id="room.id"
                     :name="room.name"
                     :x="room.x"
                     :y="room.y"

@@ -78,7 +78,6 @@ export function useMovementAndResize(options: UseMovementArguments & UseResizeAr
 
     return {
         mousedown: movement.mousedown,
-        hovered: movement.hovered,
         // Merge the event listeners
         mouseover: () => { movement.mouseover(); resize.mouseover(); },
         mouseout: () => { movement.mouseout(); resize.mouseout(); }

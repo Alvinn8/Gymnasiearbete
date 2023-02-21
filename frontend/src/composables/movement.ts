@@ -1,7 +1,7 @@
 import { panzoomKey } from "@/components/keys";
-import { useSelection, type SelectionType } from "@/stores/selection";
+import type { SelectionWithId } from "@/stores/selection";
 import type { Position } from "@/types";
-import { inject, onUnmounted, ref } from "vue";
+import { inject, onUnmounted, watch, } from "vue";
 
 export type UseMovementArguments = {
     /** An object containing the current position. */
@@ -10,12 +10,8 @@ export type UseMovementArguments = {
     onChange(property: keyof Position, value: number): void
     /** Called when the object is copied. */
     onCopy(): void;
-    /** The type of selection. */
-    selection: {
-        type: SelectionType;
-        id: number;
-        // TODO
-    }
+    /** The selection to use. */
+    selection: SelectionWithId;
     /** An object containing custom keybind logic. */
     customKeybinds?: {
         [key: string]: () => void;
@@ -26,7 +22,7 @@ export type UseMovementArguments = {
  * A Vue.js composeable for sharing movement logic between components.
  */
 export default function useMovement({
-    dimensions, onChange, onCopy, customKeybinds, selectionType
+    dimensions, onChange, onCopy, customKeybinds, selection
 }: UseMovementArguments) {
 
     // Drag to move
@@ -99,16 +95,20 @@ export default function useMovement({
         }
     }
 
-    const selection = useSelection(selectionType);
+    watch(selection.selected, (newValue) => {
+        if (newValue) {
+            document.body.addEventListener("keypress", handleKeyPress);
+        } else {
+            document.body.removeEventListener("keypress", handleKeyPress);
+        }
+    });
 
     function mouseOver() {
         selection.select();
-        document.body.addEventListener("keypress", handleKeyPress);
     }
 
     function mouseLeave() {
-        hovered.value = false;
-        document.body.removeEventListener("keypress", handleKeyPress);
+        // selection.deselect();
     }
 
     
@@ -121,7 +121,6 @@ export default function useMovement({
     return {
         mousedown: mouseDown,
         mouseover: mouseOver,
-        mouseout: mouseLeave,
-        hovered
+        mouseout: mouseLeave
     };
 }
