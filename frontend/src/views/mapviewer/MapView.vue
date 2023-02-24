@@ -3,10 +3,13 @@ import { apiGet, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType } from "@/types";
+import type { MapPart as MapPartType, Room } from "@/types";
 import Swal from "sweetalert2";
-import { reactive, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import SearchBar from "@/components/mapviewer/SearchBar.vue";
+import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
+import { useSelection } from "@/stores/selection";
 
 interface Data {
     name: string;
@@ -15,6 +18,8 @@ interface Data {
 
 const route = useRoute();
 const auth = useAuth();
+
+// Data
 const data = reactive<Data>({
     name: "",
     mapParts: []
@@ -43,10 +48,32 @@ watch(
     { immediate: true }
 );
 
+const rooms = ref<Room[]>([]);
+
+// Search
+const searchPrompt = ref("");
+const showSearchSuggestions = ref(false);
+
+// Selected room
+const roomSelection = useSelection("room");
+
+function selectRoomFromSuggestion(room: Room) {
+    searchPrompt.value = room.name;
+    roomSelection.select(room.id);
+    showSearchSuggestions.value = false;
+}
+
+watch(searchPrompt, () => {
+    const room = rooms.value.find(room => room.name === searchPrompt.value);
+    if (room) {
+        roomSelection.select(room.id);
+    }
+});
+
 </script>
 
 <template>
-    <div class="container-fluid">
+    <div class="panzoom">
         <PanZoom>
             <MapPart
                 v-for="mapPart of data.mapParts"
@@ -55,15 +82,46 @@ watch(
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
                 :rotation-deg="mapPart.rotationDeg"
+                @data="(data) => rooms.push(...data.rooms)"
             />
         </PanZoom>
+    </div>
+    <SearchBar
+        v-model="searchPrompt"
+        :show-back-arrow="showSearchSuggestions"
+        @focus="showSearchSuggestions = true"
+        @back="showSearchSuggestions = false"
+    />
+    <div class="search-suggestions"
+        v-if="showSearchSuggestions"
+    >
+        <SearchSuggestions
+            :rooms="rooms"
+            :prompt="searchPrompt"
+            @select="selectRoomFromSuggestion"
+        />
     </div>
 </template>
 
 <style scoped>
-.container-fluid {
-    overflow: hidden;
-    border: 2px solid #ddd;
-    height: 85vh;
+.panzoom {
+    width: 100%;
+    height: 100%;
 }
+.search-suggestions {
+    position: fixed;
+    background-color: white;
+    left: 0px;
+    top: 0px;
+    width: 100vw;
+    height: 100vh;
+    padding-top: 80px;
+}
+@media (min-width: 600px)  {
+    .search-suggestions {
+        width: 420px;
+        border-right: 1px solid #bbb;
+    }
+}
+
 </style>

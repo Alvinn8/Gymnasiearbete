@@ -13,6 +13,10 @@ const props = defineProps<{
     rotationDeg: number;
 }>();
 
+const emit = defineEmits<{
+    (e: "data", data: Data): void;
+}>();
+
 type Data = {
     walls: Wall[];
     points: Point[];
@@ -35,6 +39,7 @@ watch(
             points: info.points,
             rooms: info.rooms
         };
+        emit("data", data.value);
     },
     { immediate: true }
 );
@@ -58,6 +63,7 @@ watch(
         <MapRoom
             v-for="room of data.rooms"
             :key="room.id"
+            :id="room.id"
             :name="room.name"
             :x="room.x + offsetX"
             :y="room.y + offsetY"

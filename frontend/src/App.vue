@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { RouterView } from "vue-router";
+import { RouterView, useRoute } from "vue-router";
 import AppHeader from "./components/AppHeader.vue";
+
+const route = useRoute();
+
 </script>
 
 <template>
-  <AppHeader />
+  <AppHeader
+    v-if="route.name !== 'view-map'"
+  />
   <RouterView />
 </template>
 
