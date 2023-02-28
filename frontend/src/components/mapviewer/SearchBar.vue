@@ -38,12 +38,14 @@ const emit = defineEmits<{
 .back-arrow {
     display: inline-block;
     margin-right: 15px;
+    grid-area: back;
+    padding: 11px 0px;
 }
 .search-bar {
     width: calc(100vw - 20px);
     height: 50px;
     margin: 10px;
-    padding: 12px;
+    padding: 0px;
     padding-left: 20px;
     background: white;
     z-index: 10;
@@ -54,13 +56,17 @@ const emit = defineEmits<{
     border: 1px solid #bbb;
     cursor: pointer;
     box-shadow: 2px 2px 4px 1px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "back input";
 }
 input {
     margin: 0;
-    padding: 0;
+    padding: 12px;
     background: transparent;
     border: none;
     outline: none;
+    grid-area: input;
 }
 @media (min-width: 600px)  {
     .search-bar {

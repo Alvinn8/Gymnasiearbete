@@ -22,9 +22,13 @@ watch(selection.selected, (selected) => {
     if (selected && panzoom && divRef.value) {
         const box = divRef.value.getBoundingClientRect();
         const transform = panzoom.value.getTransform();
-        // box.x -= window.innerWidth / 2;
-        // box.y -= window.innerHeight / 2;
-        panzoom.value.smoothZoomAbs(box.x, box.y, 1);
+        const x = (box.x - transform.x) / transform.scale;
+        const y = (box.y - transform.y) / transform.scale;
+        const width = box.width / transform.scale;
+        const height = box.height / transform.scale;
+        const newX = window.innerWidth / 2 - (x + width / 2) * transform.scale;
+        const newY = window.innerHeight / 2 - (y + height / 2) * transform.scale;
+        panzoom.value.smoothMoveTo(newX, newY);
     }
 });
 

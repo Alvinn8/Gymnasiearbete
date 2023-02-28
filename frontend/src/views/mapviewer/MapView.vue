@@ -5,7 +5,7 @@ import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
 import type { MapPart as MapPartType, Room } from "@/types";
 import Swal from "sweetalert2";
-import { reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import SearchBar from "@/components/mapviewer/SearchBar.vue";
 import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
@@ -24,6 +24,10 @@ const data = reactive<Data>({
     name: "",
     mapParts: []
 });
+
+const floor = ref(1);
+
+const visibleParts = computed(() => {console.log("hi", data.mapParts); return data.mapParts.filter(mapPart => mapPart.z === floor.value);});
 
 watch(
     () => route.params.map_id,
@@ -76,7 +80,7 @@ watch(searchPrompt, () => {
     <div class="panzoom">
         <PanZoom>
             <MapPart
-                v-for="mapPart of data.mapParts"
+                v-for="mapPart of visibleParts"
                 :key="mapPart.id"
                 :map-part-id="mapPart.id"
                 :offset-x="mapPart.offsetX"

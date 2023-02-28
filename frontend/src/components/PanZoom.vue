@@ -9,6 +9,8 @@ const div = ref<HTMLDivElement | null>(null);
 
 onMounted(() => {
     panzoom.value = createPanZoom(div.value!);
+    // @ts-ignore
+    window.panzoom = panzoom.value;
 });
 
 provide(panzoomKey, panzoom);
