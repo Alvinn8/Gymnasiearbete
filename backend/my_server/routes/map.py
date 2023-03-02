@@ -179,3 +179,48 @@ def view_map(map_id):
             "mapParts": map_parts
         }
     }
+
+
+@app.route("/api/map/<map_id>/share", methods=["POST"])
+@map_view_access
+def share_map(map_id):
+    username = request.json["username"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    userRow = cur.execute(
+        "SELECT id FROM User WHERE username = ?",
+        (username,)
+    ).fetchone()
+
+    if userRow is None:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Användaren kunde inte hittas."
+        }
+
+    existingRows = cur.execute(
+        "SELECT COUNT(*) FROM UserMapAccess WHERE user_id = ? AND map_id = ?",
+        (userRow[0], map_id)
+    ).fetchone()[0]
+
+    if existingRows > 0:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Användaren har redan tillgång till kartan."
+        }
+
+    cur.execute(
+        "INSERT INTO UserMapAccess (user_id, map_id) VALUES (?, ?)",
+        (userRow[0], map_id)
+    )
+    conn.commit()
+
+    conn.close()
+
+    return {
+        "success": True
+    }

@@ -85,6 +85,26 @@ function updateOffset(mapPart: MapPartType) {
     }).catch(handleError);
 }
 
+async function share() {
+    const res = await Swal.fire({
+        title: "Dela karta",
+        text: "Ange användarnamn/e-post på användaren du vill dela kartan med.",
+        input: "text",
+        showCancelButton: true
+    });
+    if (res.isConfirmed) {
+        const apiResponse = await apiPost(`map/${route.params.map_id}/share`, {
+            username: res.value
+        }).catch(handleError);
+        if (apiResponse) {
+            Swal.fire({
+                title: "Kartan har delats.",
+                icon: "success"
+            });
+        }
+    }
+}
+
 </script>
 
 <template>
@@ -94,7 +114,7 @@ function updateOffset(mapPart: MapPartType) {
                 <h1>{{ data?.name }}</h1>
             </div>
             <div class="col">
-                <button class="btn btn-primary m-1">Dela karta</button>
+                <button class="btn btn-primary m-1" @click="share">Dela karta</button>
                 <DeleteMap />
             </div>
         </div>
