@@ -108,8 +108,8 @@ def map_info(jwt, map_id):
     conn = create_connection()
     cur = conn.cursor()
 
-    name_data = cur.execute(
-        "SELECT name FROM Map WHERE id = ?",
+    map_data = cur.execute(
+        "SELECT name, public FROM Map WHERE id = ?",
         (map_id,)
     ).fetchone()
 
@@ -134,7 +134,8 @@ def map_info(jwt, map_id):
     return {
         "success": True,
         "data": {
-            "name": name_data[0],
+            "name": map_data[0],
+            "public": bool(map_data[1]),
             "mapParts": map_parts
         }
     }
@@ -219,6 +220,27 @@ def share_map(map_id):
     )
     conn.commit()
 
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+
+@app.route("/api/map/<map_id>/change_public_status", methods=["POST"])
+@map_access_required
+def change_public_status(map_id):
+    public = request.json["public"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE Map SET public = ? WHERE id = ?",
+        (public, map_id)
+    )
+
+    conn.commit()
     conn.close()
 
     return {

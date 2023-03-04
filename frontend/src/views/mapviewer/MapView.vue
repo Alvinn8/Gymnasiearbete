@@ -27,7 +27,7 @@ const data = reactive<Data>({
 
 const floor = ref(1);
 
-const visibleParts = computed(() => {console.log("hi", data.mapParts); return data.mapParts.filter(mapPart => mapPart.z === floor.value);});
+const visibleParts = computed(() => data.mapParts.filter(mapPart => mapPart.z === floor.value));
 
 watch(
     () => route.params.map_id,

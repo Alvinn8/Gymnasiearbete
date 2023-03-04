@@ -10,6 +10,8 @@ bcrypt = Bcrypt(app)
 # https://blog.loginradius.com/engineering/guest-post/securing-flask-api-with-jwt/
 
 # A decorator used on routes that require authentication to be used
+
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -19,7 +21,7 @@ def login_required(f):
                 "error": "Unauthorized",
                 "message": "No Authorization header"
             }, 401
-        
+
         parts = request.headers["Authorization"].split(" ")
         if len(parts) != 2 or parts[0] != "Bearer":
             return {
@@ -29,13 +31,16 @@ def login_required(f):
             }, 401
         token = parts[1]
 
-        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+        data = jwt.decode(
+            token, app.config["SECRET_KEY"], algorithms=["HS256"])
 
         return f(data, *args, **kwargs)
     return decorated
 
+
 def create_jwt(dictionary):
     return jwt.encode(dictionary, app.config["SECRET_KEY"], "HS256")
+
 
 def create_user_jwt(user_id, username):
     return create_jwt({
@@ -44,6 +49,7 @@ def create_user_jwt(user_id, username):
             "name": username
         }
     })
+
 
 def has_access_to_map(map_id, jwt, cur):
     accessCount = cur.execute(
@@ -55,11 +61,13 @@ def has_access_to_map(map_id, jwt, cur):
 
 # A decorator used to denote that a route requires login and that the logged in
 # user needs to have access to the map wit the id of the map_id parameter
+
+
 def map_access_required(f):
     @wraps(f)
     @login_required
     def decorated(jwt, map_id, *args, **kwargs):
-        
+
         conn = create_connection()
         cur = conn.cursor()
 
@@ -69,7 +77,7 @@ def map_access_required(f):
                 "success": False,
                 "error": "Kunde inte hitta kartan"
             }
-    
+
         conn.close()
 
         return f(jwt, map_id, *args, **kwargs)
@@ -77,11 +85,13 @@ def map_access_required(f):
 
 # A decorator used to denote that a route requires login and access to a map
 # and a map part
+
+
 def map_part_required(f):
     @wraps(f)
     @login_required
     def decorated(jwt, map_id, part_id, *args, **kwargs):
-        
+
         conn = create_connection()
         cur = conn.cursor()
 
@@ -91,7 +101,7 @@ def map_part_required(f):
                 "success": False,
                 "error": "Kunde inte hitta kartdelen"
             }
-        
+
         partCount = cur.execute(
             "SELECT COUNT(*) FROM MapPart WHERE id = ? AND map_id = ?",
             (part_id, map_id,)
@@ -103,7 +113,7 @@ def map_part_required(f):
                 "success": False,
                 "error": "Kunde inte hitta kartdelen"
             }
-    
+
         conn.close()
 
         return f(jwt, map_id, part_id, *args, **kwargs)
@@ -112,10 +122,12 @@ def map_part_required(f):
 # A decorator that denotes that a route requires view access to a map. The map
 # must either me public or the user must be logged in to an account with access
 # to the map.
+
+
 def map_view_access(f):
     @wraps(f)
     def decorated(map_id, *args, **kwargs):
-        
+
         conn = create_connection()
         cur = conn.cursor()
 
@@ -132,12 +144,15 @@ def map_view_access(f):
 
         conn.close()
 
+        print(public)
         if public[0] == 0:
             # Private map, we need to verify that the user
             # is logged in and has access to the map.
+
             @wraps(f)
             @login_required
             def decorated2(jwt, *args2, **kwargs2):
+                print(2)
                 conn = create_connection()
                 cur = conn.cursor()
 
@@ -147,11 +162,20 @@ def map_view_access(f):
                         "success": False,
                         "error": "Du har inte tillgång till kartan. Pröva att logga in."
                     }, 403
-                
+
                 conn.close()
                 return f(*args2, **kwargs2)
-            
-            decorated2(map_id, *args, **kwargs)
+
+            res = decorated2(map_id, *args, **kwargs)
+            print("res", res)
+            if isinstance(res, tuple) and res[1] == 401:  # Unauthorized
+                print(1)
+                return {
+                    "success": False,
+                    "error": "Du har inte tillgång till kartan. Pröva att logga in."
+                }, 403
+            print(2)
+            return res
 
         return f(map_id, *args, **kwargs)
     return decorated

@@ -11,12 +11,14 @@ import MapEditorBase from "@/components/editor/MapEditorBase.vue";
 
 interface Data {
     name: string;
+    public: boolean;
     mapParts: MapPartType[];
 }
 
 const route = useRoute();
 const data = reactive<Data>({
     name: "",
+    public: false,
     mapParts: []
 });
 const currentMapPartId = ref<number | null>(null);
@@ -37,6 +39,7 @@ watch(
         if (!info) return;
 
         data.name = info.data.name;
+        data.public = info.data.public;
         data.mapParts = info.data.mapParts;
     },
     { immediate: true }
@@ -105,6 +108,28 @@ async function share() {
     }
 }
 
+async function changePublicStatus(isPublic: boolean) {
+    const res = await Swal.fire({
+        title: "Är du säker?",
+        text: isPublic
+            ? "Offentliga kartor kan ses av alla med länken."
+            : "Privata kartor kan endast ses av användare med tillgång till den.",
+        showCancelButton: true
+    });
+    if (res.isConfirmed) {
+        const apiResponse = await apiPost(`map/${route.params.map_id}/change_public_status`, {
+            public: isPublic
+        }).catch(handleError);
+        if (apiResponse) {
+            Swal.fire({
+                title: isPublic ? "Kartan är nu offentlig." : "Kartan är nu privat.",
+                icon: "success"
+            });
+            data.public = isPublic;
+        }
+    }
+}
+
 </script>
 
 <template>
@@ -115,6 +140,14 @@ async function share() {
             </div>
             <div class="col">
                 <button class="btn btn-primary m-1" @click="share">Dela karta</button>
+                <button class="btn btn-warning m-1"
+                    @click="() => changePublicStatus(true)"
+                    v-if="!data.public"
+                    >Gör till offentlig karta</button>
+                <button class="btn btn-warning m-1"
+                    @click="() => changePublicStatus(false)"
+                    v-if="data.public"
+                >Gör till privat karta</button>
                 <DeleteMap />
             </div>
         </div>
