@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSelection } from "@/stores/selection";
-import { inject, ref, toRef, watch } from "vue";
+import { computed, inject, ref, toRef, watch } from "vue";
 import { panzoomKey } from "../keys";
 
 const props = defineProps<{
@@ -18,8 +18,8 @@ const selection = useSelection("room", toRef(props, "id"));
 const divRef = ref<HTMLDivElement | null>(null);
 const panzoom = inject(panzoomKey);
 
-watch(selection.selected, (selected) => {
-    if (selected && panzoom && divRef.value) {
+watch([selection.selected, panzoom, divRef], () => {
+    if (selection.selected.value && panzoom && divRef.value) {
         const box = divRef.value.getBoundingClientRect();
         const transform = panzoom.value.getTransform();
         const x = (box.x - transform.x) / transform.scale;
@@ -30,7 +30,7 @@ watch(selection.selected, (selected) => {
         const newY = window.innerHeight / 2 - (y + height / 2) * transform.scale;
         panzoom.value.smoothMoveTo(newX, newY);
     }
-});
+}, { immediate: true });
 
 </script>
 
@@ -40,7 +40,7 @@ watch(selection.selected, (selected) => {
                   width: ${width}px;
                   height: ${height}px;`"
         ref="divRef"
-        :class="(hovered ? 'hover' : '') + ' ' + (selection.selected.value ? 'selected' : '')"
+        :class="{ selected: selection.selected.value, hovered: hovered }"
         @mouseover="() => hovered = true"
         @mouseout="() => hovered = false"
         @click="selection.select()"

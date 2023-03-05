@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMovementAndResize } from "@/composables/resize";
 import { useSelection } from "@/stores/selection";
+import { useViewMode } from "@/stores/viewMode";
 import type { DimensionsProperty } from "@/types";
 import { toRef } from "vue";
 
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const selection = useSelection("room", toRef(props, "id"));
+const viewMode = useViewMode();
 
 const movement = useMovementAndResize({
     dimensions: props,
@@ -36,8 +38,9 @@ const movement = useMovementAndResize({
     <div :style="`left: ${x}px;
                   top: ${y}px;
                   width: ${width}px;
-                  height: ${height}px;`"
-        :class="selection.selected.value ? 'hover' : null"
+                  height: ${height}px;
+                  opacity: ${viewMode.opacity};`"
+        :class="{ hover: selection.selected.value }"
         @mousedown="(e) => { movement.mousedown(e); selection.select() }"
     >
         <span>{{ name }}</span>

@@ -7,7 +7,7 @@ import { useAuth } from "@/stores/auth";
 export const API_BASE = getApiBase();
 
 function getApiBase() {
-    return "http://localhost:8080/api/";
+    return `http://${location.hostname}:8080/api/`;
 }
 
 /**

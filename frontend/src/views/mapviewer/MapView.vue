@@ -3,31 +3,30 @@ import { apiGet, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, Room } from "@/types";
+import type { MapPart as MapPartType, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import SearchBar from "@/components/mapviewer/SearchBar.vue";
 import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
 import { useSelection } from "@/stores/selection";
+import MobilePanel from "@/components/MobilePanel.vue";
 
 interface Data {
     name: string;
     mapParts: MapPartType[];
+    rooms: RoomWithZ[];
 }
 
 const route = useRoute();
 const auth = useAuth();
 
 // Data
-const data = reactive<Data>({
-    name: "",
-    mapParts: []
-});
+const data = ref<Data | null>(null);
 
 const floor = ref(1);
 
-const visibleParts = computed(() => data.mapParts.filter(mapPart => mapPart.z === floor.value));
+const visibleParts = computed(() => data.value?.mapParts.filter(mapPart => mapPart.z === floor.value));
 
 watch(
     () => route.params.map_id,
@@ -46,13 +45,10 @@ watch(
             ]));
         if (!info) return;
 
-        data.name = info.data.name;
-        data.mapParts = info.data.mapParts;
+        data.value = info.data;
     },
     { immediate: true }
 );
-
-const rooms = ref<Room[]>([]);
 
 // Search
 const searchPrompt = ref("");
@@ -61,23 +57,35 @@ const showSearchSuggestions = ref(false);
 // Selected room
 const roomSelection = useSelection("room");
 
-function selectRoomFromSuggestion(room: Room) {
+function selectRoomFromSuggestion(room: RoomWithZ) {
     searchPrompt.value = room.name;
     roomSelection.select(room.id);
     showSearchSuggestions.value = false;
+    
+    // Change to the floor the room is at
+    if (room.z !== floor.value) {
+        floor.value = room.z;
+    }
 }
 
 watch(searchPrompt, () => {
-    const room = rooms.value.find(room => room.name === searchPrompt.value);
+    const room = data.value?.rooms.find(room => room.name === searchPrompt.value);
     if (room) {
         roomSelection.select(room.id);
     }
 });
 
+const isLowestFloor = computed(() => {
+    return !(data.value?.mapParts.find(mapPart => mapPart.z === floor.value - 1));
+});
+const isHighestFloor = computed(() => {
+    return !(data.value?.mapParts.find(mapPart => mapPart.z === floor.value + 1));
+});
+
 </script>
 
 <template>
-    <div class="panzoom">
+    <div class="panzoom" v-if="visibleParts">
         <PanZoom>
             <MapPart
                 v-for="mapPart of visibleParts"
@@ -86,24 +94,37 @@ watch(searchPrompt, () => {
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
                 :rotation-deg="mapPart.rotationDeg"
-                @data="(data) => rooms.push(...data.rooms)"
+                @data="(data) => data.rooms.push(...data.rooms)"
             />
         </PanZoom>
     </div>
-    <SearchBar
-        v-model="searchPrompt"
-        :show-back-arrow="showSearchSuggestions"
-        @focus="showSearchSuggestions = true"
-        @back="showSearchSuggestions = false"
-    />
-    <div class="search-suggestions"
-        v-if="showSearchSuggestions"
-    >
-        <SearchSuggestions
-            :rooms="rooms"
-            :prompt="searchPrompt"
-            @select="selectRoomFromSuggestion"
-        />
+    <div class="overlay">
+        <div class="upper">
+            <SearchBar
+                v-model="searchPrompt"
+                :show-back-arrow="showSearchSuggestions"
+                @focus="showSearchSuggestions = true"
+                @back="showSearchSuggestions = false"
+            />
+            <div class="search-suggestions"
+                v-if="showSearchSuggestions && data"
+            >
+                <SearchSuggestions
+                :rooms="data.rooms"
+                :prompt="searchPrompt"
+                @select="selectRoomFromSuggestion"
+                />
+            </div>
+            <div class="floor-container">
+                <button class="btn btn-secondary btn-sm" :disabled="isLowestFloor" @click="floor--">Ned</button>
+                <span>Ändra våning</span>
+                <button class="btn btn-secondary btn-sm" :disabled="isHighestFloor" @click="floor++">Upp</button>
+            </div>
+        </div>
+        <MobilePanel :visible="roomSelection.selected.value !== null" :sticky="true">
+            <p>Hello</p>
+            <p>{{ roomSelection.selected.value }}</p>
+        </MobilePanel>
     </div>
 </template>
 
@@ -111,6 +132,27 @@ watch(searchPrompt, () => {
 .panzoom {
     width: 100%;
     height: 100%;
+}
+.overlay {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+        "upper"
+        "mobile-panel";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    pointer-events: none;
+}
+.overlay * {
+    pointer-events: all;
+}
+.upper {
+    position: relative;
+    pointer-events: none;
+    margin-bottom: 20px;
 }
 .search-suggestions {
     position: fixed;
@@ -120,6 +162,19 @@ watch(searchPrompt, () => {
     width: 100vw;
     height: 100vh;
     padding-top: 80px;
+}
+.floor-container {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background-color: white;
+    box-shadow: 2px 2px 4px 1px;
+    padding: 3px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+}
+.floor-container span {
+    margin: 3px 5px;
 }
 @media (min-width: 600px)  {
     .search-suggestions {

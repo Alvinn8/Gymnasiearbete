@@ -3,6 +3,7 @@ import { apiPost, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
 import { DEFAULT_WALL_WIDTH } from "@/constants";
 import { useSelection } from "@/stores/selection";
+import { useViewMode } from "@/stores/viewMode";
 import type { DimensionsProperty, Wall } from "@/types";
 import { inject, toRef } from "vue";
 import { useRoute } from "vue-router";
@@ -32,6 +33,7 @@ const mapPartId = inject(mapPartIdKey);
 const route = useRoute();
 
 const selection = useSelection("wall", toRef(props, "id"));
+const viewMode = useViewMode();
 
 const movement = useMovementAndResize({
     dimensions: props,
@@ -73,8 +75,9 @@ async function copyWall() {
     <div :style="`left: ${x}px;
                   top: ${y}px;
                   width: ${width}px;
-                  height: ${height}px;`"
-        :class="selection.selected.value ? 'hover' : null"
+                  height: ${height}px;
+                  opacity: ${viewMode.opacity};`"
+        :class="{ hover: selection.selected.value }"
         @mousedown="(e) => { movement.mousedown(e); selection.select(); }"
     ></div>
 </template>

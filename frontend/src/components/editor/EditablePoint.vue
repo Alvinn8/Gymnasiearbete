@@ -104,7 +104,7 @@ async function copyPoint() {
 <template>
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
-        :class="selection.selected.value ? 'hover' : null"
+        :class="{ hover: selection.selected.value }"
         @mousedown="(e) => { movement.mousedown(e); selection.select() }"
         @click="emit('click')"
         @contextmenu.prevent="(e) => emit('right-click', e)"

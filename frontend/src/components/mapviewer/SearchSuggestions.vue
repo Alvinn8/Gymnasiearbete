@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { Room } from "@/types";
+import type { Room, RoomWithZ } from "@/types";
 import { computed } from "vue";
 
 const props = defineProps<{
-    rooms: Room[];
+    rooms: RoomWithZ[];
     prompt: string;
 }>();
 
 const emit = defineEmits<{
-    (e: "select", room: Room): void;
+    (e: "select", room: RoomWithZ): void;
 }>();
 
 const filteredRooms = computed(() => props.rooms

@@ -46,6 +46,9 @@ export type PointConnection = Identifiable & {
     point_b: Position;
 };
 
+/**
+ * A type for a map part.
+ */
 export type MapPart = {
     id: number;
     name: string;
@@ -55,6 +58,16 @@ export type MapPart = {
     rotationDeg: number;
 };
 
+/**
+ * A room.
+ */
 export type Room = Identifiable & Dimensions & {
     name: string;
 }
+
+/**
+ * A room with a z coordinate.
+ */
+export type RoomWithZ = Room & {
+    z: number;
+};

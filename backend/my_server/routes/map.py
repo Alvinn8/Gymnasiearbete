@@ -1,7 +1,7 @@
 from flask import request
 from my_server import app
 from my_server.auth import login_required, map_access_required, map_view_access
-from my_server.database_handler import create_connection, db_fetch_all
+from my_server.database_handler import create_connection, db_fetch_all, db_to_json
 
 
 @app.route("/api/map/list")
@@ -158,26 +158,29 @@ def view_map(map_id):
         (map_id,)
     ).fetchall()
 
+    # Get all rooms on this map
+    rooms_data = cur.execute(
+        """SELECT Room.id, Room.name, Room.door_at_point_id, Room.x, Room.y, Room.width, Room.height, MapPart.z FROM Room
+               JOIN Point ON Point.id = Room.door_at_point_id
+               JOIN MapPart ON MapPart.id = Point.map_part_id
+               WHERE MapPart.map_id = ?
+        """, (map_id,)
+    ).fetchall()
+
     conn.close()
 
-    map_parts = []
-    for map_part_data in map_parts_data:
-        map_part_id = map_part_data[0]
+    map_parts = db_to_json(
+        map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
 
-        map_parts.append({
-            "id": map_part_id,
-            "name": map_part_data[1],
-            "offsetX": map_part_data[2],
-            "offsetY": map_part_data[3],
-            "rotationDeg": map_part_data[4],
-            "z": map_part_data[5]
-        })
+    rooms = db_to_json(
+        rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z"])
 
     return {
         "success": True,
         "data": {
             "name": name_data[0],
-            "mapParts": map_parts
+            "mapParts": map_parts,
+            "rooms": rooms
         }
     }
 
