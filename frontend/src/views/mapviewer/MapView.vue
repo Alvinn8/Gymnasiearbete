@@ -57,6 +57,8 @@ const showSearchSuggestions = ref(false);
 // Selected room
 const roomSelection = useSelection("room");
 
+const selectedRoom = computed(() => data.value?.rooms.find(room => room.id === roomSelection.selected.value) ?? null);
+
 function selectRoomFromSuggestion(room: RoomWithZ) {
     searchPrompt.value = room.name;
     roomSelection.select(room.id);
@@ -121,9 +123,13 @@ const isHighestFloor = computed(() => {
                 <button class="btn btn-secondary btn-sm" :disabled="isHighestFloor" @click="floor++">Upp</button>
             </div>
         </div>
-        <MobilePanel :visible="roomSelection.selected.value !== null" :sticky="true">
-            <p>Hello</p>
-            <p>{{ roomSelection.selected.value }}</p>
+        <MobilePanel :visible="selectedRoom != null" :sticky="true">
+            <template
+                v-if="selectedRoom"
+            >
+            <h5>{{ selectedRoom.name }}</h5>
+            <button class="btn btn-primary">Hitta hit</button>
+        </template>
         </MobilePanel>
     </div>
 </template>
@@ -132,6 +138,7 @@ const isHighestFloor = computed(() => {
 .panzoom {
     width: 100%;
     height: 100%;
+    overflow: hidden;
 }
 .overlay {
     display: grid;
@@ -162,6 +169,7 @@ const isHighestFloor = computed(() => {
     width: 100vw;
     height: 100vh;
     padding-top: 80px;
+    z-index: 9;
 }
 .floor-container {
     position: absolute;

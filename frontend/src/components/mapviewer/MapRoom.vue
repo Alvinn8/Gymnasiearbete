@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSelection } from "@/stores/selection";
-import { computed, inject, ref, toRef, watch } from "vue";
+import { inject, ref, toRef, watch } from "vue";
 import { panzoomKey } from "../keys";
 
 const props = defineProps<{
@@ -44,6 +44,7 @@ watch([selection.selected, panzoom, divRef], () => {
         @mouseover="() => hovered = true"
         @mouseout="() => hovered = false"
         @click="selection.select()"
+        @touchend="selection.select()"
     >
         <span>{{ name }}</span>
     </div>

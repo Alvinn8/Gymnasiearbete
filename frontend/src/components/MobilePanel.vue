@@ -26,11 +26,13 @@ function getPosition(e: TouchEvent | MouseEvent) {
 }
 
 function dragStart(e: TouchEvent | MouseEvent) {
+    e.preventDefault();
     currentDragPosition.value = getPosition(e);
 }
 
 function dragMove(e: TouchEvent | MouseEvent) {
     if (!currentDragPosition.value) return;
+    e.preventDefault();
     const newPosition = getPosition(e);
     const difference = currentDragPosition.value - newPosition;
     height.value += difference / window.innerHeight * 100;
@@ -50,6 +52,10 @@ function dragEnd() {
             height.value = 0;
         }
     }
+}
+
+function click() {
+    height.value = 50;
 }
 
 onMounted(() => {
@@ -75,10 +81,12 @@ onUnmounted(() => {
         class="mobile-panel"
         :class="{ transition: currentDragPosition === null, fullscreen: height === 100 }"
         :style="`height: ${height}vh;`"
-        @touchstart="dragStart"
-        @mousedown="dragStart"
     >
-        <div class="handle-container">
+        <div class="handle-container"
+            @touchstart="dragStart"
+            @mousedown="dragStart"
+            @click="click"
+        >
             <div class="handle"></div>
         </div>
         <div class="body">
@@ -106,6 +114,7 @@ onUnmounted(() => {
 .handle-container {
     width: 100%;
     display: inline-block;
+    padding: 10px 0px;
 }
 .handle {
     width: 50px;
