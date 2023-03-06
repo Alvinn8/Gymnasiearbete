@@ -7,7 +7,10 @@ const props = defineProps<{
 }>();
 
 const height = ref(10);
-const currentDragPosition = ref<number | null>(null);
+const dragStartInfo = ref<{
+    y: number;
+    height: number;
+} | null>(null);
 
 /**
  * Get the y position from a touch event or a mouse event.
@@ -27,21 +30,23 @@ function getPosition(e: TouchEvent | MouseEvent) {
 
 function dragStart(e: TouchEvent | MouseEvent) {
     e.preventDefault();
-    currentDragPosition.value = getPosition(e);
+    dragStartInfo.value = {
+        y: getPosition(e),
+        height: height.value
+    };
 }
 
 function dragMove(e: TouchEvent | MouseEvent) {
-    if (!currentDragPosition.value) return;
+    if (!dragStartInfo.value) return;
     e.preventDefault();
-    const newPosition = getPosition(e);
-    const difference = currentDragPosition.value - newPosition;
-    height.value += difference / window.innerHeight * 100;
-    currentDragPosition.value = newPosition;
+    const newY = getPosition(e);
+    const difference = dragStartInfo.value.y - newY;
+    height.value = dragStartInfo.value.height + difference / window.innerHeight * 100;
 }
 
 function dragEnd() {
-    if (!currentDragPosition.value) return;
-    currentDragPosition.value = null;
+    if (!dragStartInfo.value) return;
+    dragStartInfo.value = null;
     if (height.value > 75) {
         height.value = 100;
     }
@@ -54,12 +59,40 @@ function dragEnd() {
     }
 }
 
-function click() {
-    height.value = 50;
+function click(e: MouseEvent | TouchEvent) {
+    let isClick = false;
+    if (dragStartInfo.value === null) {
+        // The user is not dragging, so it must be a click
+        isClick = true;
+    } else {
+        // The user is dragging, get how long they have dragged for
+        let pos: number | null = null;
+        if ("changedTouches" in e) {
+            if (e.changedTouches[0]) {
+                pos = e.changedTouches[0].clientY;
+            }
+        } else {
+            pos = e.clientY;
+        }
+        if (!pos) {
+            // If we failed to do that, assume its a click
+            isClick = true;
+        } else {
+            // Get the amount of pixels the user moved
+            const diff = Math.abs(pos - dragStartInfo.value.y);
+            // If the user moved less than 10 pixels, assume it is a click
+            if (diff < 10) {
+                isClick = true;
+            }
+        }
+    }
+    if (isClick) {
+        height.value = 50;
+    }
 }
 
 onMounted(() => {
-    window.addEventListener("touchmove", dragMove);
+    window.addEventListener("touchmove", dragMove, { passive: false });
     window.addEventListener("mousemove", dragMove);
     
     window.addEventListener("touchend", dragEnd);
@@ -79,13 +112,18 @@ onUnmounted(() => {
 <template>
     <div
         class="mobile-panel"
-        :class="{ transition: currentDragPosition === null, fullscreen: height === 100 }"
+        :class="{
+            transition: dragStartInfo === null,
+            fullscreen: height === 100,
+            'd-none': !visible
+        }"
         :style="`height: ${height}vh;`"
     >
         <div class="handle-container"
             @touchstart="dragStart"
             @mousedown="dragStart"
-            @click="click"
+            @mouseup="click"
+            @touchend="click"
         >
             <div class="handle"></div>
         </div>
