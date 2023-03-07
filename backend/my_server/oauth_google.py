@@ -51,7 +51,6 @@ def verify_google_token(code):
     data_string = id_token.split(".")[1]
     data_string = base64.b64decode(data_string)
     data = json.loads(data_string)
-    print(data)
     google_account_id = data["sub"]
     email = data["email"]
     return (None, google_account_id, email)

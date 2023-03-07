@@ -144,7 +144,6 @@ def map_view_access(f):
 
         conn.close()
 
-        print(public)
         if public[0] == 0:
             # Private map, we need to verify that the user
             # is logged in and has access to the map.
@@ -152,7 +151,6 @@ def map_view_access(f):
             @wraps(f)
             @login_required
             def decorated2(jwt, *args2, **kwargs2):
-                print(2)
                 conn = create_connection()
                 cur = conn.cursor()
 
@@ -167,14 +165,11 @@ def map_view_access(f):
                 return f(*args2, **kwargs2)
 
             res = decorated2(map_id, *args, **kwargs)
-            print("res", res)
             if isinstance(res, tuple) and res[1] == 401:  # Unauthorized
-                print(1)
                 return {
                     "success": False,
                     "error": "Du har inte tillgång till kartan. Pröva att logga in."
                 }, 403
-            print(2)
             return res
 
         return f(map_id, *args, **kwargs)

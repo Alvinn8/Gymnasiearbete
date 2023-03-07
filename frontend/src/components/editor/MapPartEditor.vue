@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
-import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room } from "@/types";
+import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room, RoomCategory } from "@/types";
 import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
@@ -13,9 +13,11 @@ import NewWall from "./NewWall.vue";
 import PointConnection from "./PointConnection.vue";
 import ConnectLine from "./ConnectLine.vue";
 import MapEditorBase from "./MapEditorBase.vue";
+import Swal from "sweetalert2";
 
 const props = defineProps<{
     mapPartId: number;
+    roomCategories: RoomCategory[];
 }>();
 
 const emit = defineEmits<{
@@ -117,6 +119,17 @@ function updateRoom(roomId: number, property: DimensionsProperty, value: number)
 
     // And save when its time
     saveWithDebounce();
+}
+
+function changeRoomCategory(room: Room) {
+    const obj: {[key: string]: string} = {};
+    props.roomCategories.forEach(roomCategory => obj[roomCategory.id] = roomCategory.name);
+    Swal.fire({
+        title: "Välj kategori på rummet.",
+        input: "select",
+        inputOptions: obj
+    });
+    // TODO
 }
 
 function saveWithDebounce() {
@@ -269,6 +282,7 @@ function changeBackgroundScale(newScale: number) {
                     :width="room.width"
                     :height="room.height"
                     @change="(property, value) => updateRoom(room.id, property, value)"
+                    @change-category="changeRoomCategory(room)"
                 />
                 <!-- This component handles creating new connections. -->
                 <ConnectLine

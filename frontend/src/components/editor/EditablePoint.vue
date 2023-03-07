@@ -73,7 +73,8 @@ const movement = useMovement({
                 x: props.x - 10,
                 y: props.y - 10,
                 width: 20,
-                height: 20
+                height: 20,
+                doorAtPointId: props.id
             });
             const roomSelection = useSelection("room");
             roomSelection.select(roomId);

@@ -105,7 +105,7 @@ def map_part_info(jwt, map_id, part_id):
     for room_data in rooms_data:
         rooms.append({
             "id": room_data[0],
-            "hasDoorAtPointId": room_data[1],
+            "doorAtPointId": room_data[1],
             "name": room_data[2],
             "x": room_data[3],
             "y": room_data[4],
@@ -179,7 +179,7 @@ def map_part_brief_info(map_id, part_id):
     for room_data in rooms_data:
         rooms.append({
             "id": room_data[0],
-            "hasDoorAtPointId": room_data[1],
+            "doorAtPointId": room_data[1],
             "name": room_data[2],
             "x": room_data[3],
             "y": room_data[4],

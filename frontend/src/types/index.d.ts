@@ -63,6 +63,14 @@ export type MapPart = {
  */
 export type Room = Identifiable & Dimensions & {
     name: string;
+    /**
+     * The id of the point where this room has a door.
+     */
+    doorAtPointId: number;
+    /**
+     * The id of the category of the room.
+     */
+    category_id?: number;
 }
 
 /**
@@ -71,3 +79,11 @@ export type Room = Identifiable & Dimensions & {
 export type RoomWithZ = Room & {
     z: number;
 };
+
+/**
+ * A category of a room.
+ */
+export type RoomCategory = {
+    id: number;
+    name: string;
+}

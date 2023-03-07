@@ -20,6 +20,10 @@ const emit = defineEmits<{
      * Called when the wall dimensions change.
      */
     (e: "change", property: DimensionsProperty, value: number): void;
+    /**
+     * Called when the user wishes to change the category of the room.
+     */
+    (e: "change-category"): void;
 }>();
 
 const selection = useSelection("room", toRef(props, "id"));
@@ -29,7 +33,10 @@ const movement = useMovementAndResize({
     dimensions: props,
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
-    onCopy: () => {}
+    onCopy: () => {},
+    customKeybinds: {
+        "q": () => emit("change-category")
+    }
 });
 
 </script>

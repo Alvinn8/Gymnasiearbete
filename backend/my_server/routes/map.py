@@ -118,6 +118,11 @@ def map_info(jwt, map_id):
         (map_id,)
     ).fetchall()
 
+    room_categories_data = cur.execute(
+        "SELECT id, name FROM RoomCategory WHERE map_id = ?",
+        (map_id,)
+    ).fetchall()
+
     conn.close()
 
     map_parts = []
@@ -130,13 +135,16 @@ def map_info(jwt, map_id):
             "rotationDeg": map_part_data[4],
             "z": map_part_data[5]
         })
+    
+    room_categories = db_to_json(room_categories_data, ["id", "name"])
 
     return {
         "success": True,
         "data": {
             "name": map_data[0],
             "public": bool(map_data[1]),
-            "mapParts": map_parts
+            "mapParts": map_parts,
+            "roomCategories": room_categories
         }
     }
 
@@ -167,20 +175,27 @@ def view_map(map_id):
         """, (map_id,)
     ).fetchall()
 
+    # Get all room categories
+    room_categories_data = cur.execute(
+        "SELECT id, name FROM RoomCategory WHERE map_id = ?",
+        (map_id,)
+    ).fetchall()
+
     conn.close()
 
-    map_parts = db_to_json(
-        map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
+    map_parts = db_to_json(map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
 
-    rooms = db_to_json(
-        rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z"])
+    rooms = db_to_json(rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z"])
+    
+    room_categories = db_to_json(room_categories_data, ["id", "name"])
 
     return {
         "success": True,
         "data": {
             "name": name_data[0],
             "mapParts": map_parts,
-            "rooms": rooms
+            "rooms": rooms,
+            "roomCategories": room_categories
         }
     }
 

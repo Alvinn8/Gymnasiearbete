@@ -10,7 +10,7 @@ def new_room(jwt, map_id, part_id):
     # We may want to verify the point actually is on this map part
 
     json = request.get_json()
-    has_door_at_point_id = json["doorAtPointId"]
+    door_at_point_id = json["doorAtPointId"]
     name = json["name"]
 
     conn = create_connection()
@@ -18,7 +18,7 @@ def new_room(jwt, map_id, part_id):
 
     cur.execute(
         "INSERT INTO Room (door_at_point_id, name, x, y, width, height) VALUES (?, ?, ?, ?, ?, ?)",
-        (has_door_at_point_id, name, 10, 10, 40, 40)
+        (door_at_point_id, name, 10, 10, 40, 40)
     )
     room_id = cur.lastrowid
 
@@ -40,10 +40,15 @@ def edit_room(jwt, map_id, part_id):
 
     data = request.get_json()
     for room in data["changes"]:
+        category_id = None
+        if "category_id" in room:
+            category_id = room["category_id"]
+
         cur.execute(
-            "UPDATE Room SET name = ?, x = ?, y = ?, width = ?, height = ? WHERE id = ?",
+            "UPDATE Room SET name = ?, x = ?, y = ?, width = ?, height = ?, category_id = ? WHERE id = ?",
             (room["name"], room["x"], room["y"],
-             room["width"], room["height"], room["id"])
+             room["width"], room["height"], category_id,
+             room["id"])
         )
 
     conn.commit()

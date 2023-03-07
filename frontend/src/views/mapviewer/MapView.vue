@@ -3,7 +3,7 @@ import { apiGet, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, RoomWithZ } from "@/types";
+import type { MapPart as MapPartType, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -16,6 +16,7 @@ interface Data {
     name: string;
     mapParts: MapPartType[];
     rooms: RoomWithZ[];
+    roomCategories: RoomCategory[];
 }
 
 const route = useRoute();
@@ -113,8 +114,9 @@ const isHighestFloor = computed(() => {
             >
                 <SearchSuggestions
                 :rooms="data.rooms"
+                :room-categories="data.roomCategories"
                 :prompt="searchPrompt"
-                @select="selectRoomFromSuggestion"
+                @select-room="selectRoomFromSuggestion"
                 />
             </div>
             <div class="floor-container">
