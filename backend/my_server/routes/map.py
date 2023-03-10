@@ -168,7 +168,7 @@ def view_map(map_id):
 
     # Get all rooms on this map
     rooms_data = cur.execute(
-        """SELECT Room.id, Room.name, Room.door_at_point_id, Room.x, Room.y, Room.width, Room.height, MapPart.z FROM Room
+        """SELECT Room.id, Room.name, Room.door_at_point_id, Room.x, Room.y, Room.width, Room.height, MapPart.z, Room.category_id FROM Room
                JOIN Point ON Point.id = Room.door_at_point_id
                JOIN MapPart ON MapPart.id = Point.map_part_id
                WHERE MapPart.map_id = ?
@@ -185,7 +185,7 @@ def view_map(map_id):
 
     map_parts = db_to_json(map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
 
-    rooms = db_to_json(rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z"])
+    rooms = db_to_json(rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z", "categoryId"])
     
     room_categories = db_to_json(room_categories_data, ["id", "name"])
 

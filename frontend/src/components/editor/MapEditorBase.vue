@@ -21,7 +21,7 @@ import PanZoom from "../PanZoom.vue";
 .panzoom {
     overflow: hidden;
     border: 2px solid #ddd;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 150px);
 }
 .grid {
     display: grid;

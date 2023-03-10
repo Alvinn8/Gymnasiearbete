@@ -121,15 +121,29 @@ function updateRoom(roomId: number, property: DimensionsProperty, value: number)
     saveWithDebounce();
 }
 
-function changeRoomCategory(room: Room) {
+async function changeRoomCategory(room: Room) {
+    // Get all room categories as an object
     const obj: {[key: string]: string} = {};
     props.roomCategories.forEach(roomCategory => obj[roomCategory.id] = roomCategory.name);
-    Swal.fire({
+    
+    // Ask the user what category to set
+    const res = await Swal.fire({
         title: "Välj kategori på rummet.",
         input: "select",
         inputOptions: obj
     });
-    // TODO
+
+    if (res.value) {
+        // Update the room
+        const id = parseInt(res.value);
+        room.categoryId = id;
+
+        // Add to the set of changes
+        changedRooms.add(room);
+
+        // And save when its time
+        saveWithDebounce();
+    }
 }
 
 function saveWithDebounce() {

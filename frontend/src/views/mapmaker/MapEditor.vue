@@ -8,6 +8,7 @@ import type { MapPart as MapPartType, RoomCategory } from "@/types";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import MapPartEditor from "@/components/editor/MapPartEditor.vue";
 import MapEditorBase from "@/components/editor/MapEditorBase.vue";
+import KeybindsInfo from "@/components/editor/KeybindsInfo.vue";
 
 interface Data {
     name: string;
@@ -241,6 +242,10 @@ async function changePublicStatus(isPublic: boolean) {
         :room-categories="data.roomCategories"
         @back="currentMapPartId = null"
     />
+
+    <div class="keybinds_info">
+        <KeybindsInfo />
+    </div>
 </template>
 
 <style scoped>

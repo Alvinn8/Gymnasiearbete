@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useMovementAndResize } from "@/composables/resize";
+import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import { useViewMode } from "@/stores/viewMode";
 import type { DimensionsProperty } from "@/types";
-import { toRef } from "vue";
+import { toRef, watch } from "vue";
 
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 
 const selection = useSelection("room", toRef(props, "id"));
 const viewMode = useViewMode();
+const keybindInfo = useKeybindInfo();
 
 const movement = useMovementAndResize({
     dimensions: props,
@@ -36,6 +38,22 @@ const movement = useMovementAndResize({
     onCopy: () => {},
     customKeybinds: {
         "q": () => emit("change-category")
+    }
+});
+
+watch(selection.selected, (selected) => {
+    if (selected) {
+        keybindInfo.groups = [
+            ...movement.description,
+            keybindInfo.invert,
+            keybindInfo.faster,
+            keybindInfo.copy,
+            {
+                id: "change_category",
+                description: "Ändra rumkategori",
+                keys: ["q"]
+            }
+        ];
     }
 });
 

@@ -41,8 +41,8 @@ def edit_room(jwt, map_id, part_id):
     data = request.get_json()
     for room in data["changes"]:
         category_id = None
-        if "category_id" in room:
-            category_id = room["category_id"]
+        if "categoryId" in room:
+            category_id = room["categoryId"]
 
         cur.execute(
             "UPDATE Room SET name = ?, x = ?, y = ?, width = ?, height = ?, category_id = ? WHERE id = ?",

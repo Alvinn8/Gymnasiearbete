@@ -70,7 +70,7 @@ export type Room = Identifiable & Dimensions & {
     /**
      * The id of the category of the room.
      */
-    category_id?: number;
+    categoryId?: number | null;
 }
 
 /**

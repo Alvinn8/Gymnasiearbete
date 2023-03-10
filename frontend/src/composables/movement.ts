@@ -1,9 +1,16 @@
 import { panzoomKey } from "@/components/keys";
 import { FAST_MOVEMENT_MULTIPLIER } from "@/constants";
 import { pressing } from "@/keyboard";
+import type { KeybindGroup } from "@/stores/keybindsInfo";
 import type { SelectionWithId } from "@/stores/selection";
 import type { Position } from "@/types";
 import { inject, onUnmounted, watch, } from "vue";
+
+const description: Readonly<KeybindGroup> = Object.freeze({
+    id: "movement",
+    description: "Flytta",
+    keys: ["w", "a", "s", "d"]
+});
 
 export type UseMovementArguments = {
     /** An object containing the current position. */
@@ -113,6 +120,7 @@ export default function useMovement({
     });
 
     return {
-        mousedown: mouseDown
+        mousedown: mouseDown,
+        description
     };
 }

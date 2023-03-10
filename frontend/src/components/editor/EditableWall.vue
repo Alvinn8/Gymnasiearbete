@@ -2,10 +2,11 @@
 import { apiPost, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
 import { DEFAULT_WALL_WIDTH } from "@/constants";
+import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import { useViewMode } from "@/stores/viewMode";
 import type { DimensionsProperty, Wall } from "@/types";
-import { inject, toRef } from "vue";
+import { inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
@@ -34,6 +35,7 @@ const route = useRoute();
 
 const selection = useSelection("wall", toRef(props, "id"));
 const viewMode = useViewMode();
+const keybindInfo = useKeybindInfo();
 
 const movement = useMovementAndResize({
     dimensions: props,
@@ -68,6 +70,22 @@ async function copyWall() {
 
     emit("copy", wall);
 }
+
+watch(selection.selected, (selected) => {
+    if (selected) {
+        keybindInfo.groups = [
+            ...movement.description,
+            keybindInfo.invert,
+            keybindInfo.faster,
+            keybindInfo.copy,
+            {
+                id: "normalize_wall_size",
+                description: "Normalisera väggstorlek",
+                keys: ["q"]
+            }
+        ];
+    }
+});
 
 </script>
 

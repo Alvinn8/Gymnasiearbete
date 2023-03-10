@@ -11,6 +11,7 @@ import SearchBar from "@/components/mapviewer/SearchBar.vue";
 import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
 import { useSelection } from "@/stores/selection";
 import MobilePanel from "@/components/MobilePanel.vue";
+import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
 
 interface Data {
     name: string;
@@ -126,12 +127,9 @@ const isHighestFloor = computed(() => {
             </div>
         </div>
         <MobilePanel :visible="selectedRoom != null" :sticky="true">
-            <template
-                v-if="selectedRoom"
-            >
-            <h5>{{ selectedRoom.name }}</h5>
-            <button class="btn btn-primary">Hitta hit</button>
-        </template>
+            <div v-if="selectedRoom && data" class="container">
+                <RoomInfo :room="selectedRoom" :room-categories="data.roomCategories" />
+            </div>
         </MobilePanel>
     </div>
 </template>

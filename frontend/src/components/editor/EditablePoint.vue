@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { apiPost, handleError } from "@/api/api";
 import useMovement from "@/composables/movement";
+import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import type { Point, Room } from "@/types";
 import Swal from "sweetalert2";
-import { inject, toRef } from "vue";
+import { inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
@@ -37,6 +38,7 @@ const emit = defineEmits<{
 }>();
 
 const selection = useSelection("point", toRef(props, "id"));
+const keybindInfo = useKeybindInfo();
 
 const movement = useMovement({
     dimensions: props,
@@ -99,6 +101,21 @@ async function copyPoint() {
 
     emit("copy", point);
 }
+
+watch(selection.selected, (selected) => {
+    if (selected) {
+        keybindInfo.groups = [
+            movement.description,
+            keybindInfo.faster,
+            keybindInfo.copy,
+            {
+                id: "new_room",
+                description: "Skapa nytt rum",
+                keys: ["r"]
+            }
+        ];
+    }
+});
 
 </script>
 
