@@ -2,8 +2,32 @@ from my_server.database_handler import create_connection
 import math
 import time
 
+def distance(x1, y1, x2, y2):
+    return math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
 
-def a_star_find_shortest_path(map_id, start_point_id, end_point_id):
+# Get the next point in openSet that has the lowest fScore. In other words, get
+# the point which we _think_ will be the shortest path
+def get_next_point(open_set, f_score):
+    lowest_id = None
+    lowest_f_score = math.inf  # Infinity
+    for point_id in open_set:
+        # The value defaults to infinity
+        point_f_score = f_score[point_id] if point_id in f_score else math.inf
+        if point_f_score < lowest_f_score:
+            # We found a point with a lower score, assign the current
+            lowest_id = point_id
+            lowest_f_score = point_f_score
+    # Return the point with the lowest f score that we found
+    return lowest_id
+
+def reconstruct_path(previous, current_id):
+    path = [current_id]
+    while current_id in previous:
+        current_id = previous[current_id]
+        path.insert(0, current_id)
+    return path
+
+def a_star_find_shortest_path(start_point_id, end_point_id):
     # https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode [Read 2023-03-10]
 
     t0 = time.time()
@@ -11,8 +35,16 @@ def a_star_find_shortest_path(map_id, start_point_id, end_point_id):
     conn = create_connection()
     cur = conn.cursor()
 
+    end_point_x, end_point_y = cur.execute(
+        "SELECT x, y FROM Point WHERE id = ?",
+        (end_point_id,)
+    ).fetchone()
+
+    database_access_count = 1
+
     # A set of points that have been discovered
     open_set = set()
+    open_set.add(start_point_id)
 
     # A dictionary where the map is a point id and the value is the id of the point
     # that came before the key. This can be used to recreate the shortest path after
@@ -38,29 +70,22 @@ def a_star_find_shortest_path(map_id, start_point_id, end_point_id):
     f_score = {}
     f_score[start_point_id] = 0
 
-    # Get the next point in openSet that has the lowest fScore. In other words, get
-    # the point which we _think_ will be the shortest path
-    def get_next_point():
-        lowest_id = None
-        lowest_f_score = math.inf  # Infinity
-        for point_id in open_set:
-            point_f_score = f_score[point_id]
-            # The value defaults to infinity
-            if point_f_score is None:
-                point_f_score = math.inf
-            if point_f_score < lowest_f_score:
-                # We found a point with a lower score, assign the current
-                lowest_id = point_id
-                lowest_f_score = point_f_score
-        # Return the point with the lowest f score that we found
-        return lowest_id
+    neighbor_loop_iterations = 0
 
     # While the open set isn't empty
     while len(open_set) > 0:
-        current_point_id = get_next_point()
+        current_point_id = get_next_point(open_set, f_score)
 
         if current_point_id == end_point_id:
-            pass
+            # We found the end! Let's reconstruct the path we took and return that.
+            t1 = time.time()
+            print("Pathfinding:")
+            print(f"\t Time: {(t1 - t0):.3f} seconds")
+            print(f"\t Database lookups: {database_access_count}")
+            print(f"\t Neighbor loop iterations: {neighbor_loop_iterations}")
+            print("</>")
+            conn.close()
+            return reconstruct_path(previous, current_point_id)
 
         open_set.remove(current_point_id)
 
@@ -73,20 +98,24 @@ def a_star_find_shortest_path(map_id, start_point_id, end_point_id):
             (current_point_id, current_point_id)
         ).fetchall()
 
+        database_access_count += 1
+
         # Get all neighboring points
         for point_connection in current_point_connections:
             # The connection objects will contain two ids, one of which will be the current
             # id, so getting the _other_ id will be the neighbor's id.
             neighbor_is_point_a = point_connection[1] == current_point_id
             neighbor_point_id = point_connection[0] if neighbor_is_point_a else point_connection[1]
+        
+            neighbor_loop_iterations += 1
 
             # The SQL query gets both the current point's x and y and the neighbor point's
             # x abd y. They are labled as point a and point b in the database, we just need
             # to identify which is the current one and which is the neighbor. The variable
             # neighbor_is_point_a is true if the neighbor is point a which is used to assign
             # the correct coordinates.
-            point_a_x = point_connection[2], point_a_y = point_connection[3]
-            point_b_x = point_connection[4], point_b_y = point_connection[5]
+            point_a_x, point_a_y = point_connection[2], point_connection[3]
+            point_b_x, point_b_y = point_connection[4], point_connection[5]
 
             # If the neighbor is point a, get the neighbor's coordinates for point a, else
             # from point b.
@@ -98,8 +127,29 @@ def a_star_find_shortest_path(map_id, start_point_id, end_point_id):
             current_x = point_b_x if neighbor_is_point_a else point_a_x
             current_y = point_b_y if neighbor_is_point_a else point_a_y
 
-            neighbor_distance = g_score[current_point_id]
+            new_neighbor_g_score = g_score[current_point_id] + distance(current_x, current_y, neighbor_x, neighbor_y)
 
-    t1 = time.time()
+            # Get the current g_score for the neighbor so we can determine if we just found
+            # a better score.
+            neighbor_g_score = g_score[neighbor_point_id] if neighbor_point_id in g_score else math.inf
 
-    print(f"Pathfinding time: {(t1 - t0):.2f} seconds")
+            if new_neighbor_g_score < neighbor_g_score:
+                # We found a faster path to get to this point. Save it.
+                previous[neighbor_point_id] = current_point_id
+                g_score[neighbor_point_id] = new_neighbor_g_score
+
+                # Predict the distance to get to the end point by calculating the bird's-eye
+                # distance to the end point
+                predicted_distance_to_end = distance(neighbor_x, neighbor_y, end_point_x, end_point_y)
+
+                # Assign the f_score, the predicted distance to get from the start to te end
+                # by going trough this neighbor point.
+                f_score[neighbor_point_id] = new_neighbor_g_score + predicted_distance_to_end
+
+                # Add the neighbor to the open set so we can consider it for the next iteration.
+                # Since f_score was assigned the new point with the lowest predicted score
+                # (f_score) will be chosen for the next iteration.
+                open_set.add(neighbor_point_id)
+
+    conn.close()
+    return None

@@ -7,6 +7,10 @@ const props = defineProps<{
     roomCategories: RoomCategory[];
 }>();
 
+const emit = defineEmits<{
+    (e: "pathfind"): void;
+}>();
+
 const roomCategory = computed(() => props.roomCategories.find(
     roomCategory => roomCategory.id === props.room.categoryId
 ));
@@ -16,7 +20,7 @@ const roomCategory = computed(() => props.roomCategories.find(
 <template>
     <h4>{{ room.name }}</h4>
     <p v-if="roomCategory" class="category">{{ roomCategory.name }}</p>
-    <button class="btn btn-primary">Hitta hit</button>
+    <button class="btn btn-primary" @click="emit('pathfind')">Hitta hit</button>
 </template>
 
 <style scoped>

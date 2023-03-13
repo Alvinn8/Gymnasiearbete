@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { apiGet, errorHandler } from "@/api/api";
+import { apiGet, apiPost, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, RoomCategory, RoomWithZ } from "@/types";
+import type { MapPart as MapPartType, PointWithPosition, Room, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -12,6 +12,7 @@ import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
 import { useSelection } from "@/stores/selection";
 import MobilePanel from "@/components/MobilePanel.vue";
 import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
+import PointConnection from "@/components/editor/PointConnection.vue";
 
 interface Data {
     name: string;
@@ -86,6 +87,31 @@ const isHighestFloor = computed(() => {
     return !(data.value?.mapParts.find(mapPart => mapPart.z === floor.value + 1));
 });
 
+const prevRoom = ref<Room | null>(null);
+const pathfindPath = ref<PointWithPosition[] | null>(null);
+
+async function pathfindToRoom(room: Room) {
+    const endPointId = room.doorAtPointId;
+    const startPointId = prevRoom.value?.doorAtPointId;
+    prevRoom.value = room;
+    if (!startPointId) {
+        alert("no start point, plz select yes");
+        return;
+    }
+
+    const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
+        .catch(errorHandler([
+            [(json: any) => !json.success, () => Swal.fire({
+                title: "Kunde inte hitta en väg.",
+                text: "Vi gick vilse, det verkar inte gå att gå sådär som du vill",
+                icon: "error"
+            })]
+        ]));
+    if (!res) return;
+
+    pathfindPath.value = res.path;
+}
+
 </script>
 
 <template>
@@ -100,6 +126,15 @@ const isHighestFloor = computed(() => {
                 :rotation-deg="mapPart.rotationDeg"
                 @data="(data) => data.rooms.push(...data.rooms)"
             />
+            
+            <template v-if="pathfindPath">
+                <PointConnection
+                    v-for="(current_point, index) in pathfindPath"
+                    :key="index"
+                    :point_a="current_point"
+                    :point_b="pathfindPath[index - 1] ?? current_point"
+                />
+            </template>
         </PanZoom>
     </div>
     <div class="overlay">
@@ -128,7 +163,11 @@ const isHighestFloor = computed(() => {
         </div>
         <MobilePanel :visible="selectedRoom != null" :sticky="true">
             <div v-if="selectedRoom && data" class="container">
-                <RoomInfo :room="selectedRoom" :room-categories="data.roomCategories" />
+                <RoomInfo
+                    :room="selectedRoom"
+                    :room-categories="data.roomCategories"
+                    @pathfind="() => selectedRoom && pathfindToRoom(selectedRoom)"
+                />
             </div>
         </MobilePanel>
     </div>
