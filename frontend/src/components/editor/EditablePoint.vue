@@ -5,7 +5,7 @@ import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import type { Point, Room } from "@/types";
 import Swal from "sweetalert2";
-import { inject, toRef, watch } from "vue";
+import { computed, inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 

@@ -134,6 +134,21 @@ async function pathfindToRoom(room: Room) {
                     :point_a="current_point"
                     :point_b="pathfindPath[index - 1] ?? current_point"
                 />
+                <div class="debug"
+                    v-for="(current_point, index) in pathfindPath"
+                    :key="index"
+                    :style="{
+                        left: current_point.x  + 'px',
+                        top: current_point.y + 'px',
+                        position: 'absolute',
+                        width: '10px',
+                        height: '10px',
+                        backgroundColor: 'pink',
+                        fontSize: '8px'
+                    }"
+                >
+                {{ current_point.id /* todo this is debug code */ */ }}
+                </div>
             </template>
         </PanZoom>
     </div>

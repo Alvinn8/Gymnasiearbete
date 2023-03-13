@@ -295,6 +295,7 @@ function changeBackgroundScale(newScale: number) {
                     :y="room.y"
                     :width="room.width"
                     :height="room.height"
+                    :point="data.points.find(point => point.id === room.doorAtPointId)!"
                     @change="(property, value) => updateRoom(room.id, property, value)"
                     @change-category="changeRoomCategory(room)"
                 />

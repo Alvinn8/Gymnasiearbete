@@ -16,10 +16,16 @@ def pathfind():
             "success": False
         }
     
+    # [5, 9, 2]
+
+    # [2, 5, 9]
+
+    # WHERE Point.id IN (5, 9, 2)
+    
     conn = create_connection()
     cur = conn.cursor()
     path_data = cur.execute(
-        f"""SELECT x + offset_x, y + offset_y, z FROM Point
+        f"""SELECT Point.id, x + offset_x, y + offset_y, z FROM Point
             JOIN MapPart ON map_part_id = MapPart.id
             WHERE Point.id IN ({",".join(["?"] * len(path_point_ids))})""",
             # This is still safe from SQL injections as we are only creating the question
@@ -28,7 +34,21 @@ def pathfind():
     ).fetchall()
     conn.close()
 
-    path = db_to_json(path_data, ["x", "y", "z"])
+    path = []
+
+    # path_data is ordered incorrectly because SQL will order by the primary key,
+    # but we want to order by the pathfinding result.
+    for point_id in path_point_ids:
+        for point_data in path_data:
+            if point_data[0] == point_id:
+                path.append({
+                    "id": point_id,
+                    "x": point_data[1],
+                    "y": point_data[2],
+                    "z": point_data[3]
+                })
+
+    # path = db_to_json(path_data, ["id", "x", "y", "z"])
 
     return {
         "success": True,

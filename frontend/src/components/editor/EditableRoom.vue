@@ -3,8 +3,9 @@ import { useMovementAndResize } from "@/composables/resize";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import { useViewMode } from "@/stores/viewMode";
-import type { DimensionsProperty } from "@/types";
+import type { DimensionsProperty, Position } from "@/types";
 import { toRef, watch } from "vue";
+import PointConnection from "./PointConnection.vue";
 
 
 const props = defineProps<{
@@ -14,6 +15,7 @@ const props = defineProps<{
     y: number;
     width: number;
     height: number;
+    point: Position;
 }>();
 
 const emit = defineEmits<{
@@ -70,6 +72,11 @@ watch(selection.selected, (selected) => {
     >
         <span>{{ name }}</span>
     </div>
+    <PointConnection
+        v-if="selection.selected.value"
+        :point_a="{ x: x + width / 2, y: y + height / 2 }"
+        :point_b="point"
+    />
 </template>
 
 <style scoped>
