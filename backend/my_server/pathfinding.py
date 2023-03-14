@@ -76,8 +76,6 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, f_score)
 
-        print("\t current_point_id = ", current_point_id)
-
         if current_point_id == end_point_id:
             # We found the end! Let's reconstruct the path we took and return that.
             t1 = time.time()
@@ -109,8 +107,6 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
             neighbor_is_point_a = point_connection[1] == current_point_id
             neighbor_point_id = point_connection[0] if neighbor_is_point_a else point_connection[1]
 
-            print("\t\t neighbor_point_id = ", neighbor_point_id)
-        
             neighbor_loop_iterations += 1
 
             # The SQL query gets both the current point's x and y and the neighbor point's
@@ -150,8 +146,6 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
                 # by going trough this neighbor point.
                 f_score[neighbor_point_id] = new_neighbor_g_score + predicted_distance_to_end
 
-                print("\t\t\t found better g_score " + str(new_neighbor_g_score) + " > " + str(neighbor_g_score) + " abd pdte = " + str(predicted_distance_to_end))
-
                 # Add the neighbor to the open set so we can consider it for the next iteration.
                 # Since f_score was assigned the new point with the lowest predicted score
                 # (f_score) will be chosen for the next iteration.
@@ -159,3 +153,7 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
 
     conn.close()
     return None
+
+def dijkstra_find_closest(start_point_id, end_category_id):
+    # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Pseudocode
+    pass # TODO

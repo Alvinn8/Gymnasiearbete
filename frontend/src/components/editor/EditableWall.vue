@@ -34,6 +34,7 @@ const mapPartId = inject(mapPartIdKey);
 const route = useRoute();
 
 const selection = useSelection("wall", toRef(props, "id"));
+const wallSelection = useSelection("wall");
 const viewMode = useViewMode();
 const keybindInfo = useKeybindInfo();
 
@@ -69,6 +70,8 @@ async function copyWall() {
     };
 
     emit("copy", wall);
+
+    wallSelection.select(wall.id);
 }
 
 watch(selection.selected, (selected) => {

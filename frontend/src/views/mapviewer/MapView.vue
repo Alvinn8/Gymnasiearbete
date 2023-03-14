@@ -3,7 +3,7 @@ import { apiGet, apiPost, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, PointWithPosition, Room, RoomCategory, RoomWithZ } from "@/types";
+import type { MapPart as MapPartType, PointWithZ, Room, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -27,7 +27,7 @@ const auth = useAuth();
 // Data
 const data = ref<Data | null>(null);
 
-const floor = ref(1);
+const floor = ref(0);
 
 const visibleParts = computed(() => data.value?.mapParts.filter(mapPart => mapPart.z === floor.value));
 
@@ -88,7 +88,21 @@ const isHighestFloor = computed(() => {
 });
 
 const prevRoom = ref<Room | null>(null);
-const pathfindPath = ref<PointWithPosition[] | null>(null);
+const pathfindPath = ref<PointWithZ[] | null>(null);
+const pathfindConnections = computed(() => {
+    if (!pathfindPath.value) return null;
+    const array: [PointWithZ, PointWithZ][] = [];
+    for (let i = 1; i < pathfindPath.value.length; i++) {
+        const current = pathfindPath.value[i];
+        const previous = pathfindPath.value[i - 1];
+        // Only point on the current floor should be visible
+        if (current.z === floor.value && previous.z === floor.value) {
+            // Map the array to an array of pairs
+            array.push([previous, current]);
+        }
+    }
+    return array;
+});
 
 async function pathfindToRoom(room: Room) {
     const endPointId = room.doorAtPointId;
@@ -129,26 +143,11 @@ async function pathfindToRoom(room: Room) {
             
             <template v-if="pathfindPath">
                 <PointConnection
-                    v-for="(current_point, index) in pathfindPath"
-                    :key="index"
-                    :point_a="current_point"
-                    :point_b="pathfindPath[index - 1] ?? current_point"
+                    v-for="[pointA, pointB] in pathfindConnections"
+                    :key="pointA.id"
+                    :point_a="pointA"
+                    :point_b="pointB"
                 />
-                <div class="debug"
-                    v-for="(current_point, index) in pathfindPath"
-                    :key="index"
-                    :style="{
-                        left: current_point.x  + 'px',
-                        top: current_point.y + 'px',
-                        position: 'absolute',
-                        width: '10px',
-                        height: '10px',
-                        backgroundColor: 'pink',
-                        fontSize: '8px'
-                    }"
-                >
-                {{ current_point.id /* todo this is debug code */ */ }}
-                </div>
             </template>
         </PanZoom>
     </div>

@@ -49,7 +49,7 @@ export type PointConnection = Identifiable & {
 /**
  * Brief information about a point with only x, y and z.
  */
-export type PointWithPosition = Position & { z: number };
+export type PointWithZ = Point & { z: number };
 
 /**
  * A type for a map part.
