@@ -23,14 +23,9 @@ async function formNewConnection(pointA: Point, pointB: Point) {
     mousePosition.value = null;
     selectedPoint.value = null;
     if (pointA === pointB) return;
-    const distance = Math.sqrt(
-        Math.pow(pointA.x - pointB.x, 2) +
-        Math.pow(pointA.y - pointB.y, 2)
-    );
     const res = await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point_connection/new`, {
         point_a_id: pointA.id,
-        point_b_id: pointB.id,
-        weight: distance
+        point_b_id: pointB.id
     });
     const connectionId = res.id;
     const connection: PointConnectionType = {

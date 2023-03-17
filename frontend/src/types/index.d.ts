@@ -67,7 +67,7 @@ export type MapPart = {
  * A room.
  */
 export type Room = Identifiable & Dimensions & {
-    name: string;
+    name: string | null;
     /**
      * The id of the point where this room has a door.
      */

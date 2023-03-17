@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref, type ComputedRef, type Ref } from "vue";
+import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
 
 export type SelectionType = "point" | "wall" | "room";
 
@@ -13,6 +13,12 @@ const useSelectionStore = defineStore("selection", () => {
 
     const select = (id: number, type: SelectionType) => selection.value = { type, id };
     const deselect = () => selection.value = null;
+
+    watch(selection, (sel) => {
+        if (sel) {
+            console.log("Selected " + sel.type + " " + sel.id);
+        }
+    });
 
     return { selection, select, deselect };
 });

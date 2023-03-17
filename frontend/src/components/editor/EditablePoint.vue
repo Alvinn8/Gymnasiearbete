@@ -5,7 +5,7 @@ import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import type { Point, Room } from "@/types";
 import Swal from "sweetalert2";
-import { computed, inject, toRef, watch } from "vue";
+import { inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
@@ -38,6 +38,7 @@ const emit = defineEmits<{
 }>();
 
 const selection = useSelection("point", toRef(props, "id"));
+const pointSelection = useSelection("point");
 const keybindInfo = useKeybindInfo();
 
 const movement = useMovement({
@@ -68,7 +69,8 @@ const movement = useMovement({
             });
             if (!res.value) return;
             const roomId = res.value.id as number;
-            const roomName = res.value.name as string;
+            let roomName = res.value.name as string | null;
+            if (roomName && roomName.length === 0) roomName = null;
             emit("new-room", {
                 id: roomId,
                 name: roomName,
@@ -100,6 +102,8 @@ async function copyPoint() {
     };
 
     emit("copy", point);
+
+    pointSelection.select(point.id);
 }
 
 watch(selection.selected, (selected) => {

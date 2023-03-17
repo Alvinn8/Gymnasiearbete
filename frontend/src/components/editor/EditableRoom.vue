@@ -10,7 +10,7 @@ import PointConnection from "./PointConnection.vue";
 
 const props = defineProps<{
     id: number;
-    name: string;
+    name: string | null;
     x: number;
     y: number;
     width: number;
@@ -70,7 +70,7 @@ watch(selection.selected, (selected) => {
         :class="{ hover: selection.selected.value }"
         @mousedown="(e) => { movement.mousedown(e); selection.select() }"
     >
-        <span>{{ name }}</span>
+        <span v-if="name">{{ name }}</span>
     </div>
     <PointConnection
         v-if="selection.selected.value"

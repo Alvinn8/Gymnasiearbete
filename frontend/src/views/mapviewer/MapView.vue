@@ -63,7 +63,7 @@ const roomSelection = useSelection("room");
 const selectedRoom = computed(() => data.value?.rooms.find(room => room.id === roomSelection.selected.value) ?? null);
 
 function selectRoomFromSuggestion(room: RoomWithZ) {
-    searchPrompt.value = room.name;
+    searchPrompt.value = room.name ?? "";
     roomSelection.select(room.id);
     showSearchSuggestions.value = false;
     
@@ -87,7 +87,8 @@ const isHighestFloor = computed(() => {
     return !(data.value?.mapParts.find(mapPart => mapPart.z === floor.value + 1));
 });
 
-const prevRoom = ref<Room | null>(null);
+const isPathfinding = ref(false);
+const pathfindStart = ref<Room | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
 const pathfindConnections = computed(() => {
     if (!pathfindPath.value) return null;
@@ -105,26 +106,28 @@ const pathfindConnections = computed(() => {
 });
 
 async function pathfindToRoom(room: Room) {
-    const endPointId = room.doorAtPointId;
-    const startPointId = prevRoom.value?.doorAtPointId;
-    prevRoom.value = room;
-    if (!startPointId) {
-        alert("no start point, plz select yes");
-        return;
-    }
-
-    const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
-        .catch(errorHandler([
-            [(json: any) => !json.success, () => Swal.fire({
-                title: "Kunde inte hitta en väg.",
-                text: "Vi gick vilse, det verkar inte gå att gå sådär som du vill",
-                icon: "error"
-            })]
-        ]));
-    if (!res) return;
-
-    pathfindPath.value = res.path;
+    roomSelection.select(room.id);
+    isPathfinding.value = true;
 }
+
+watch([isPathfinding, pathfindStart, selectedRoom], async () => {
+    if (isPathfinding.value && pathfindPath.value && selectedRoom.value) {
+        const endPointId = selectedRoom.value.doorAtPointId;
+        const startPointId = pathfindStart.value?.doorAtPointId;
+
+        const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
+            .catch(errorHandler([
+                [(json: any) => !json.success, () => Swal.fire({
+                    title: "Kunde inte hitta en väg.",
+                    text: "Vi gick vilse, det verkar inte gå att gå sådär som du vill",
+                    icon: "error"
+                })]
+            ]));
+        if (!res) return;
+
+        pathfindPath.value = res.path;
+    }
+});
 
 </script>
 
@@ -153,12 +156,30 @@ async function pathfindToRoom(room: Room) {
     </div>
     <div class="overlay">
         <div class="upper">
-            <SearchBar
-                v-model="searchPrompt"
-                :show-back-arrow="showSearchSuggestions"
-                @focus="showSearchSuggestions = true"
-                @back="showSearchSuggestions = false"
-            />
+            <template v-if="isPathfinding">
+                <SearchBar
+                    v-model="searchPrompt"
+                    :show-back-arrow="true"
+                    prefix="Från"
+                    @focus="showSearchSuggestions = true"
+                    @back="isPathfinding = false"
+                />
+                <SearchBar
+                    v-model="searchPrompt"
+                    :show-back-arrow="true"
+                    prefix="Till"
+                    @focus="showSearchSuggestions = true"
+                    @back="isPathfinding = false"
+                />
+            </template>
+            <template v-else>
+                <SearchBar
+                    v-model="searchPrompt"
+                    :show-back-arrow="showSearchSuggestions"
+                    @focus="showSearchSuggestions = true"
+                    @back="showSearchSuggestions = false"
+                />
+            </template>
             <div class="search-suggestions"
                 v-if="showSearchSuggestions && data"
             >

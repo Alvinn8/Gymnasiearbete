@@ -62,8 +62,7 @@ watch(props, async () => {
                 return {
                     id: pointConnection.id,
                     point_a: pointA,
-                    point_b: pointB,
-                    weight: pointConnection.weight
+                    point_b: pointB
                 };
             }
             return null;

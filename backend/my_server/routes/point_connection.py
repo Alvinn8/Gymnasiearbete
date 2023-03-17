@@ -14,8 +14,8 @@ def new_point_connection(jwt, map_id, part_id):
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT INTO PointConnection (point_a_id, point_b_id, weight) VALUES (?, ?, ?)",
-        (data["point_a_id"], data["point_b_id"], data["weight"])
+        "INSERT INTO PointConnection (point_a_id, point_b_id) VALUES (?, ?)",
+        (data["point_a_id"], data["point_b_id"])
     )
     point_connection_id = cur.lastrowid
 

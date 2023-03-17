@@ -5,7 +5,7 @@ import { panzoomKey } from "../keys";
 
 const props = defineProps<{
     id: number;
-    name: string;
+    name: string | null;
     x: number;
     y: number;
     width: number;
@@ -46,7 +46,7 @@ watch([selection.selected, panzoom, divRef], () => {
         @click="selection.select()"
         @touchend="selection.select()"
     >
-        <span>{{ name }}</span>
+        <span v-if="name">{{ name }}</span>
     </div>
 </template>
 

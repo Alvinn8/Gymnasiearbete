@@ -48,7 +48,7 @@ def map_part_info(jwt, map_id, part_id):
     ).fetchall()
 
     point_connections_data = cur.execute(
-        "SELECT PointConnection.id, point_a_id, point_b_id, weight FROM PointConnection " +
+        "SELECT PointConnection.id, point_a_id, point_b_id FROM PointConnection " +
         "JOIN Point AS point_a ON point_a.id = point_a_id " +
         "JOIN Point AS point_b ON point_b.id = point_b_id " +
         "WHERE point_a.map_part_id = ? OR point_b.map_part_id = ?",
@@ -97,8 +97,7 @@ def map_part_info(jwt, map_id, part_id):
         point_connections.append({
             "id": point_connection[0],
             "point_a_id": point_connection[1],
-            "point_b_id": point_connection[2],
-            "weight": point_connection[3]
+            "point_b_id": point_connection[2]
         })
 
     rooms = []

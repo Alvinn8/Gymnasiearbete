@@ -2,6 +2,7 @@
 defineProps<{
     modelValue: string;
     showBackArrow: boolean;
+    prefix?: string;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +23,9 @@ const emit = defineEmits<{
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
             </svg>
+        </div>
+        <div v-if="prefix" class="prefix">
+            {{ prefix }}
         </div>
         <input
             type="text"
@@ -49,7 +53,7 @@ const emit = defineEmits<{
     padding-left: 20px;
     background: white;
     z-index: 10;
-    position: fixed;
+    position: relative;
     left: 0px;
     top: 0px;
     border-radius: 10px;
@@ -57,8 +61,8 @@ const emit = defineEmits<{
     cursor: pointer;
     box-shadow: 2px 2px 4px 1px;
     display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-areas: "back input";
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas: "back prefix input";
 }
 input {
     margin: 0;
@@ -67,6 +71,12 @@ input {
     border: none;
     outline: none;
     grid-area: input;
+}
+.prefix {
+    grid-area: prefix;
+    padding: 12px 0px;
+    font-weight: bold;
+    width: 30px;
 }
 @media (min-width: 600px)  {
     .search-bar {
