@@ -5,14 +5,14 @@ import time
 def distance(x1, y1, x2, y2):
     return math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
 
-# Get the next point in openSet that has the lowest fScore. In other words, get
+# Get the next point in openSet that has the lowest f_score. In other words, get
 # the point which we _think_ will be the shortest path
 def get_next_point(open_set, f_score):
     lowest_id = None
     lowest_f_score = math.inf  # Infinity
     for point_id in open_set:
         # The value defaults to infinity
-        point_f_score = f_score[point_id] if point_id in f_score else math.inf
+        point_f_score = f_score.get(point_id, math.inf)
         if point_f_score < lowest_f_score:
             # We found a point with a lower score, assign the current
             lowest_id = point_id
@@ -156,4 +156,21 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
 
 def dijkstra_find_closest(start_point_id, end_category_id):
     # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Pseudocode
-    pass # TODO
+    
+    conn = create_connection()
+    cur = conn.cursor()
+
+    end_point_x, end_point_y = cur.execute(
+        "SELECT x, y FROM Point WHERE id = ?",
+        (end_point_id,)
+    ).fetchone()
+
+    open_set = set()
+
+    distances = {}
+    distances[start_point_id] = 0
+
+    while len(open_set) > 0:
+        current_point_id = get_next_point(open_set, distances)
+
+        cur.executemany()
