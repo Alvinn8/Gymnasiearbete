@@ -131,7 +131,7 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
 
             # Get the current g_score for the neighbor so we can determine if we just found
             # a better score.
-            neighbor_g_score = g_score[neighbor_point_id] if neighbor_point_id in g_score else math.inf
+            neighbor_g_score = g_score.get(neighbor_point_id, math.inf)
 
             if new_neighbor_g_score < neighbor_g_score:
                 # We found a faster path to get to this point. Save it.
@@ -156,21 +156,108 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
 
 def dijkstra_find_closest(start_point_id, end_category_id):
     # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Pseudocode
+
+    t0 = time.time()
     
     conn = create_connection()
     cur = conn.cursor()
 
-    end_point_x, end_point_y = cur.execute(
-        "SELECT x, y FROM Point WHERE id = ?",
-        (end_point_id,)
-    ).fetchone()
-
     open_set = set()
+    open_set.add(start_point_id)
+
+    already_explored = set()
 
     distances = {}
     distances[start_point_id] = 0
 
+    # A dictionary where the map is a point id and the value is the id of the point
+    # that came before the key. This can be used to recreate the shortest path after
+    # we find an a valid end point.
+    previous = {}
+
+    database_access_count = 0
+    neighbor_loop_iterations = 0
+
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, distances)
 
-        cur.executemany()
+        category_id = cur.execute(
+            "SELECT category_id FROM Room WHERE door_at_point_id = ?",
+            (current_point_id,)
+        ).fetchone()
+
+        if not category_id is None and category_id[0] == end_category_id:
+            # We found a destination Let's reconstruct the path we took and return that.
+            t1 = time.time()
+            print("Pathfinding (find closest):")
+            print(f"\t Time: {(t1 - t0):.3f} seconds")
+            print(f"\t Database lookups: {database_access_count}")
+            print(f"\t Neighbor loop iterations: {neighbor_loop_iterations}")
+            print("</>")
+            conn.close()
+            return reconstruct_path(previous, current_point_id)
+        
+        already_explored.add(current_point_id)
+        open_set.remove(current_point_id)
+
+        # Get all connections to the point
+        current_point_connections = cur.execute(
+            """SELECT point_a_id, point_b_id, point_a.x, point_a.y, point_b.x, point_b.y FROM PointConnection
+                JOIN Point AS point_a ON point_a.id = point_a_id
+                JOIN Point AS point_b ON point_b.id = point_b_id
+                WHERE point_a_id = ? OR point_b_id = ?""",
+            (current_point_id, current_point_id)
+        ).fetchall()
+
+        database_access_count += 1
+
+        # Get all neighboring points
+        for point_connection in current_point_connections:
+            # The connection objects will contain two ids, one of which will be the current
+            # id, so getting the _other_ id will be the neighbor's id.
+            neighbor_is_point_a = point_connection[1] == current_point_id
+            neighbor_point_id = point_connection[0] if neighbor_is_point_a else point_connection[1]
+
+            if neighbor_point_id in already_explored:
+                # This neighbor has already been explored. Ignore.
+                continue
+
+            already_explored.add(neighbor_point_id)
+            open_set.add(neighbor_point_id)
+
+            neighbor_loop_iterations += 1
+
+            # The SQL query gets both the current point's x and y and the neighbor point's
+            # x and y. They are labled as point a and point b in the database, we just need
+            # to identify which is the current one and which is the neighbor. The variable
+            # neighbor_is_point_a is true if the neighbor is point a which is used to assign
+            # the correct coordinates.
+            point_a_x, point_a_y = point_connection[2], point_connection[3]
+            point_b_x, point_b_y = point_connection[4], point_connection[5]
+
+            # If the neighbor is point a, get the neighbor's coordinates for point a, else
+            # from point b.
+            neighbor_x = point_a_x if neighbor_is_point_a else point_b_x
+            neighbor_y = point_a_y if neighbor_is_point_a else point_b_y
+
+            # If the neighbor is point a, get the coordinates for the current point from the
+            # other point, from point b, else from point a.
+            current_x = point_b_x if neighbor_is_point_a else point_a_x
+            current_y = point_b_y if neighbor_is_point_a else point_a_y
+
+            # Calculate the distance from the start to this neighbor
+            new_neighbor_distance = distances[current_point_id] + distance(current_x, current_y, neighbor_x, neighbor_y)
+
+            # Get the current distance from the start for the neighbor so we can determine
+            # if we just found a shorter distance.
+            neighbor_distance = distances.get(neighbor_point_id, math.inf)
+
+            # If we find a better distance...
+            if new_neighbor_distance < neighbor_distance:
+                # ...store that
+                distances[neighbor_point_id] = new_neighbor_distance
+                previous[neighbor_point_id] = current_point_id
+    
+    # No one found
+    conn.close()
+    return None

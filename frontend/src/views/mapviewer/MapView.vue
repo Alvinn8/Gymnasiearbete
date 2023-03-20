@@ -108,6 +108,7 @@ const pathfindConnections = computed(() => {
 async function pathfindToRoom(room: Room) {
     roomSelection.select(room.id);
     isPathfinding.value = true;
+    pathfindStart.value = room;
 }
 
 watch([isPathfinding, pathfindStart, selectedRoom], async () => {
@@ -128,6 +129,25 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
         pathfindPath.value = res.path;
     }
 });
+
+async function findClosest(roomCategory: RoomCategory) {
+    const startPointId = pathfindStart.value?.doorAtPointId;
+    if (!startPointId) {
+        alert("no start!!1!!");
+        return;
+    }
+    const res = await apiPost("map/pathfinding/find_closest", { startPointId, endCategoryId: roomCategory.id })
+        .catch(errorHandler([
+            [(json: any) => !json.success, () => Swal.fire({
+                title: "Kunde inte hitta något!",
+                text: "Vi gick vilse, vi kunde inte hittade närmaste " + roomCategory.name,
+                icon: "error"
+            })]
+        ]));
+    if (!res) return;
+
+    pathfindPath.value = res.path;
+}
 
 </script>
 
@@ -188,6 +208,7 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
                 :room-categories="data.roomCategories"
                 :prompt="searchPrompt"
                 @select-room="selectRoomFromSuggestion"
+                @select-room-category="findClosest"
                 />
             </div>
             <div class="floor-container">

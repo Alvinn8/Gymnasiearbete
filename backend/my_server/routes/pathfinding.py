@@ -12,6 +12,19 @@ def pathfind():
 
     path_point_ids = pathfinding.a_star_find_shortest_path(start_point_id, end_point_id)
 
+    return handle_path_point_ids(path_point_ids)
+
+@app.route("/api/map/pathfinding/find_closest", methods=["POST"])
+def find_closest():
+    data = request.get_json()
+    start_point_id = data["startPointId"]
+    end_category_id = data["endCategoryId"]
+
+    path_point_ids = pathfinding.dijkstra_find_closest(start_point_id, end_category_id)
+
+    return handle_path_point_ids(path_point_ids)
+
+def handle_path_point_ids(path_point_ids):
     if path_point_ids is None:
         return {
             "success": False
