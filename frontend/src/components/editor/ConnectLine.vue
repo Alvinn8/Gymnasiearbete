@@ -8,7 +8,7 @@ import PointConnection from "./PointConnection.vue";
 
 const emit = defineEmits<{
     (e: "new-connection", connection: PointConnectionType): void
-    (e: "callbacks", clickPoint: (point: Point) => void, rightClickPount: (e: MouseEvent, point: Point) => void): void
+    (e: "callbacks", clickPoint: (point: Point) => void, rightClickPoint: (e: MouseEvent, point: Point) => void): void
 }>();
 
 const selectedPoint = ref<Point | null>(null);
