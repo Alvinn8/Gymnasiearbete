@@ -14,6 +14,8 @@ const props = defineProps<{
     id: number;
     x: number;
     y: number;
+    isCrossMapPart: boolean;
+    isRoomPoint: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -126,7 +128,11 @@ watch(selection.selected, (selected) => {
 <template>
     <div :style="`left: ${x}px;
                   top: ${y}px;`"
-        :class="{ hover: selection.selected.value }"
+        :class="{
+            hover: selection.selected.value,
+            crossMapPart: isCrossMapPart,
+            roomPoint: isRoomPoint
+        }"
         @mousedown="(e) => { movement.mousedown(e); selection.select() }"
         @click="emit('click')"
         @contextmenu.prevent="(e) => emit('right-click', e)"
@@ -143,6 +149,21 @@ div {
     width: 10px;
     height: 10px;
     transform: translate(-5px, -5px);
+    --cross-map-part-color: #be5757;
+    --room-point-color: #57be57;
+}
+.crossMapPart, .roomPoint {
+    border-style: dashed;
+}
+.crossMapPart {
+    background-color:  var(--cross-map-part-color);
+}
+.roomPoint {
+    background-color:  var(--room-point-color);
+}
+.crossMapPart.roomPoint {
+    background-image:
+        linear-gradient(-45deg, var(--cross-map-part-color), var(--cross-map-part-color), var(--room-point-color), var(--room-point-color));
 }
 .hover {
     background-color: gray;

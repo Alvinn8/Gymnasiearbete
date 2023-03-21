@@ -1,12 +1,12 @@
 from flask import request
 from my_server import app
-from my_server.auth import map_part_required
+from my_server.auth import map_access_required
 from my_server.database_handler import create_connection
 
 
-@app.route("/api/map/<map_id>/part/<part_id>/point_connection/new", methods=["POST"])
-@map_part_required
-def new_point_connection(jwt, map_id, part_id):
+@app.route("/api/map/<map_id>/point_connection/new", methods=["POST"])
+@map_access_required
+def new_point_connection(jwt, map_id):
 
     data = request.get_json()
 

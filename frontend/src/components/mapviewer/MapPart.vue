@@ -69,6 +69,7 @@ watch(
             :y="room.y + offsetY"
             :width="room.width"
             :height="room.height"
+            :counter-rotation-deg="-rotationDeg"
         />
     </div>
 </template>

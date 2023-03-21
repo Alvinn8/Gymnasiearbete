@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
-import { inject, ref, toRef, watch } from "vue";
-import { panzoomKey } from "../keys";
+import { ref, toRef, watch } from "vue";
 
 const props = defineProps<{
     id: number;
@@ -10,16 +10,17 @@ const props = defineProps<{
     y: number;
     width: number;
     height: number;
+    counterRotationDeg: number;
 }>();
 
 const hovered = ref(false);
 const selection = useSelection("room", toRef(props, "id"));
 
 const divRef = ref<HTMLDivElement | null>(null);
-const panzoom = inject(panzoomKey);
+const panzoom = usePanzoom();
 
 watch([selection.selected, panzoom, divRef], () => {
-    if (selection.selected.value && panzoom && divRef.value) {
+    if (selection.selected.value && panzoom.value && divRef.value) {
         const box = divRef.value.getBoundingClientRect();
         const transform = panzoom.value.getTransform();
         const x = (box.x - transform.x) / transform.scale;
@@ -46,7 +47,10 @@ watch([selection.selected, panzoom, divRef], () => {
         @click="selection.select()"
         @touchend="selection.select()"
     >
-        <span v-if="name">{{ name }}</span>
+        <span
+            v-if="name"
+            :style="{ transform: `rotate(${counterRotationDeg}deg)` }"
+        >{{ name }}</span>
     </div>
 </template>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
 import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room, RoomCategory } from "@/types";
-import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
+import { computed, onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import ChangeBackground from "./ChangeBackground.vue";
@@ -11,9 +11,9 @@ import EditableRoom from "./EditableRoom.vue";
 import NewPoint from "./NewPoint.vue";
 import NewWall from "./NewWall.vue";
 import PointConnection from "./PointConnection.vue";
-import ConnectLine from "./ConnectLine.vue";
 import MapEditorBase from "./MapEditorBase.vue";
 import Swal from "sweetalert2";
+import { useConnectionManager } from "@/stores/connectionManager";
 
 const props = defineProps<{
     mapPartId: number;
@@ -30,24 +30,25 @@ const data = ref<null | {
     points: Point[];
     rooms: Room[];
     pointConnections: PointConnectionType[];
+    crossMapPartPoints: Set<Point>;
     background: string | null;
     backgroundScale: number;
 }>();
 
 const route = useRoute();
+const connectionManager = useConnectionManager((newConnection: PointConnectionType) => {
+    if (!data.value) return;
+    data.value.pointConnections.push(newConnection);
+});
 
 provide(mapPartIdKey, toRef(props, "mapPartId"));
-
-const connectionCallbacks = {
-    clickPoint: (point: Point) => {},
-    rightClickPoint: (e: MouseEvent, point: Point) => {}
-};
 
 watch(props, async () => {
     const info = await apiGet(`map/${route.params.map_id}/part/${props.mapPartId}/info`)
         .catch(handleError);
     if (!info) return;
 
+    const crossMapPartPoints = new Set<Point>();
     data.value = {
         name: info.name,
         walls: info.walls,
@@ -55,6 +56,7 @@ watch(props, async () => {
         rooms: info.rooms,
         background: info.background,
         backgroundScale: info.background_scale,
+        crossMapPartPoints: crossMapPartPoints,
         pointConnections: info.point_connections.map((pointConnection: any) => {
             const pointA = info.points.find((point: Point) => point.id === pointConnection.point_a_id);
             const pointB = info.points.find((point: Point) => point.id === pointConnection.point_b_id);
@@ -64,6 +66,10 @@ watch(props, async () => {
                     point_a: pointA,
                     point_b: pointB
                 };
+            } else {
+                // One of the points is cross-part.
+                if (pointA) crossMapPartPoints.add(pointA);
+                if (pointB) crossMapPartPoints.add(pointB);
             }
             return null;
         }).filter((c: any) => !!c) // Remove any null items
@@ -271,10 +277,12 @@ function changeBackgroundScale(newScale: number) {
                     :id="point.id"
                     :x="point.x"
                     :y="point.y"
+                    :is-cross-map-part="data.crossMapPartPoints.has(point)"
+                    :is-room-point="Boolean(data.rooms.find(room => room.doorAtPointId === point.id))"
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => data && data.points.push(point)"
-                    @click="() => connectionCallbacks.clickPoint(point)"
-                    @right-click="(e) => connectionCallbacks.rightClickPoint(e, point)"
+                    @click="() => connectionManager.clickPoint(point, mapPartId)"
+                    @right-click="(e) => connectionManager.rightClickPoint(e, point, mapPartId)"
                     @new-room="(room) => data && data.rooms.push(room)"
                 />
                 <!-- Render connections between points. -->
@@ -298,15 +306,46 @@ function changeBackgroundScale(newScale: number) {
                     @change="(property, value) => updateRoom(room.id, property, value)"
                     @change-category="changeRoomCategory(room)"
                 />
-                <!-- This component handles creating new connections. -->
-                <ConnectLine
-                    @callbacks="(clickPoint, rightClickPoint) => {
-                        connectionCallbacks.clickPoint = clickPoint;
-                        connectionCallbacks.rightClickPoint = rightClickPoint;
-                    }"
-                    @new-connection="(connection) => data && data.pointConnections.push(connection)"
+                <!-- Draw the line for forming new connections. -->
+                <PointConnection
+                    v-if="connectionManager.selectedPoint && connectionManager.mousePosition"
+                    :point_a="connectionManager.selectedPoint.point"
+                    :point_b="connectionManager.mousePosition"
                 />
             </div>
         </template>
     </MapEditorBase>
+    <!-- The message box amount cross-map-part connections. -->
+    <div
+        v-if="connectionManager.selectedPoint && connectionManager.selectedPoint.mapPartId !== mapPartId"
+        class="cross-map-part-warning alert alert-danger"
+    >
+        <span>En anslutning mellan kartdelar skapas just nu.</span>
+        <br>
+        <span>Klicka på punkten som ska anslutas</span>
+    </div>
 </template>
+
+<style scoped>
+.cross-map-part-warning {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translate(-50%);
+    border-width: 5px;
+    font-size: 20px;
+    animation: flash 750ms linear infinite;
+}
+
+@keyframes flash {
+    0% {
+        border-color: red;
+    }
+    50% {
+        border-color: white;
+    }
+    100% {
+        border-color: red;
+    }
+}
+</style>

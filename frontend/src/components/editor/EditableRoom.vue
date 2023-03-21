@@ -91,7 +91,7 @@ div {
     align-items: center;
 }
 span {
-    background: black;
+    background: rgb(0, 0, 0, 0.5);
     color: white;
     padding: 3px;
     border-radius: 5px;
@@ -99,5 +99,9 @@ span {
 }
 .hover {
     background-color: rgba(0, 0, 0, 0.3);
+}
+.hover span {
+    background: rgb(0, 0, 0, 0.05);
+    text-emphasis-color: rgb(0, 0, 0, 0.25);
 }
 </style>

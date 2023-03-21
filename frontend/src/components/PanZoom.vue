@@ -1,19 +1,15 @@
 <script setup lang="ts">
-import { onMounted, provide, ref } from "vue";
-import type { PanZoom } from "panzoom";
+import { onMounted, ref } from "vue";
 import createPanZoom from "panzoom";
-import { panzoomKey } from "./keys";
+import { usePanzoom } from "@/stores/panzoom";
 
-const panzoom = ref<PanZoom | null>(null);
+const panzoom = usePanzoom();
 const div = ref<HTMLDivElement | null>(null);
 
 onMounted(() => {
     panzoom.value = createPanZoom(div.value!);
-    // @ts-ignore
-    window.panzoom = panzoom.value;
 });
 
-provide(panzoomKey, panzoom);
 </script>
 
 <template>

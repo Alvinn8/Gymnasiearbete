@@ -1,10 +1,10 @@
-import { panzoomKey } from "@/components/keys";
 import { FAST_MOVEMENT_MULTIPLIER } from "@/constants";
 import { pressing } from "@/keyboard";
 import type { KeybindGroup } from "@/stores/keybindsInfo";
+import { usePanzoom } from "@/stores/panzoom";
 import type { SelectionWithId } from "@/stores/selection";
 import type { Position } from "@/types";
-import { inject, onUnmounted, watch, } from "vue";
+import { onUnmounted, watch, } from "vue";
 
 const description: Readonly<KeybindGroup> = Object.freeze({
     id: "movement",
@@ -36,7 +36,7 @@ export default function useMovement({
 
     // Drag to move
 
-    const panzoom = inject(panzoomKey);
+    const panzoom = usePanzoom();
 
     const moveStart = {
         mouseX: 0,
@@ -46,7 +46,7 @@ export default function useMovement({
     };
     
     function mouseMove(e: MouseEvent) {
-        if (!panzoom) return;
+        if (!panzoom.value) return;
         const scale = panzoom.value.getTransform().scale;
         const diffX = (e.clientX - moveStart.mouseX) / scale;
         const diffY = (e.clientY - moveStart.mouseY) / scale;
@@ -59,14 +59,14 @@ export default function useMovement({
     }
     
     function mouseUp() {
-        panzoom?.value.resume();
+        panzoom.value?.resume();
         document.body.removeEventListener("mousemove", mouseMove);
         document.body.removeEventListener("mouseup", mouseUp);
     }
     
     function mouseDown(e: MouseEvent) {
         e.preventDefault();
-        panzoom?.value.pause();
+        panzoom.value?.pause();
         moveStart.mouseX = e.clientX;
         moveStart.mouseY = e.clientY;
         moveStart.thisX = dimensions.x;
