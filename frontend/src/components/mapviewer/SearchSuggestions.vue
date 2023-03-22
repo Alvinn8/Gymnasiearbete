@@ -5,6 +5,7 @@ import { computed } from "vue";
 const props = defineProps<{
     rooms: RoomWithZ[];
     roomCategories: RoomCategory[];
+    showCategories: boolean;
     prompt: string;
 }>();
 
@@ -14,13 +15,13 @@ const emit = defineEmits<{
 }>();
 
 const filteredRooms = computed(() => props.rooms
-    .filter(room => room.name.toUpperCase().includes(
+    .filter(room => room.name && room.name.toUpperCase().includes(
         props.prompt.trim().toUpperCase()
     ))
     .sort()
 );
 
-const filteredRoomCategories = computed(() => props.roomCategories
+const filteredRoomCategories = computed(() => !props.showCategories ? [] : props.roomCategories
     .filter(roomCategory => roomCategory.name.toUpperCase().includes(
         props.prompt.trim().toUpperCase()
     )));

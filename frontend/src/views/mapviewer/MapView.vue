@@ -53,9 +53,15 @@ watch(
     { immediate: true }
 );
 
+type RoomCallback = {
+    text: string;
+    callback: (room: Room) => void;
+}
+
 // Search
 const searchPrompt = ref("");
 const showSearchSuggestions = ref(false);
+const selectRoomCallback = ref<RoomCallback | null>(null);
 
 // Selected room
 const roomSelection = useSelection("room");
@@ -63,9 +69,14 @@ const roomSelection = useSelection("room");
 const selectedRoom = computed(() => data.value?.rooms.find(room => room.id === roomSelection.selected.value) ?? null);
 
 function selectRoomFromSuggestion(room: RoomWithZ) {
+    showSearchSuggestions.value = false;
+    if (selectRoomCallback.value) {
+        selectRoomCallback.value.callback(room);
+        selectRoomCallback.value = null;
+        return;
+    }
     searchPrompt.value = room.name ?? "";
     roomSelection.select(room.id);
-    showSearchSuggestions.value = false;
     
     // Change to the floor the room is at
     if (room.z !== floor.value) {
@@ -73,7 +84,9 @@ function selectRoomFromSuggestion(room: RoomWithZ) {
     }
 }
 
-watch(searchPrompt, () => {
+watch([searchPrompt, selectRoomCallback], () => {
+    // We only want to select rooms when we are searching.
+    if (selectRoomCallback.value) return;
     const room = data.value?.rooms.find(room => room.name === searchPrompt.value);
     if (room) {
         roomSelection.select(room.id);
@@ -87,16 +100,17 @@ const isHighestFloor = computed(() => {
     return !(data.value?.mapParts.find(mapPart => mapPart.z === floor.value + 1));
 });
 
-const isPathfinding = ref(false);
+const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
 const pathfindStart = ref<Room | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
+const pathfindCategory = ref<RoomCategory | null>(null);
 const pathfindConnections = computed(() => {
     if (!pathfindPath.value) return null;
     const array: [PointWithZ, PointWithZ][] = [];
     for (let i = 1; i < pathfindPath.value.length; i++) {
         const current = pathfindPath.value[i];
         const previous = pathfindPath.value[i - 1];
-        // Only point on the current floor should be visible
+        // Only points on the current floor should be visible
         if (current.z === floor.value && previous.z === floor.value) {
             // Map the array to an array of pairs
             array.push([previous, current]);
@@ -107,15 +121,15 @@ const pathfindConnections = computed(() => {
 
 async function pathfindToRoom(room: Room) {
     roomSelection.select(room.id);
-    isPathfinding.value = true;
-    pathfindStart.value = room;
+    isPathfinding.value = "pathfinding";
 }
 
 watch([isPathfinding, pathfindStart, selectedRoom], async () => {
-    if (isPathfinding.value && pathfindPath.value && selectedRoom.value) {
+    if (isPathfinding.value === "pathfinding" && pathfindStart.value !== null && selectedRoom.value !== null) {
         const endPointId = selectedRoom.value.doorAtPointId;
-        const startPointId = pathfindStart.value?.doorAtPointId;
+        const startPointId = pathfindStart.value.doorAtPointId;
 
+        console.log("Pathfinding");
         const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
             .catch(errorHandler([
                 [(json: any) => !json.success, () => Swal.fire({
@@ -130,23 +144,89 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
     }
 });
 
+watch([isPathfinding, pathfindStart, pathfindCategory], async () => {
+    if (isPathfinding.value === "finding_closest" && pathfindStart.value !== null && pathfindCategory.value !== null) {
+        const startPointId = pathfindStart.value.doorAtPointId;
+        const roomCategory = pathfindCategory.value;
+        const input = {
+            startPointId,
+            endCategoryId: roomCategory.id
+        };
+        console.log("Finding closest " + roomCategory.name);
+        const res = await apiPost("map/pathfinding/find_closest", input)
+            .catch(errorHandler([
+                [(json: any) => !json.success, () => Swal.fire({
+                    title: "Kunde inte hitta något!",
+                    text: "Vi gick vilse, vi kunde inte hittade närmaste " + roomCategory.name,
+                    icon: "error"
+                })]
+            ]));
+        if (!res) return;
+
+        pathfindPath.value = res.path as PointWithZ[];
+
+        // Get the end point
+        const endPointId = pathfindPath.value[pathfindPath.value.length - 1].id;
+
+        // Find the room assosiated with that point.
+        const room = data.value?.rooms.find(room => room.doorAtPointId === endPointId);
+
+        if (room) {
+            // Go to that floor
+            if (floor.value !== room.z) {
+                floor.value = room.z;
+            }
+
+            // Select the room
+            roomSelection.select(room.id);
+        }
+    }
+});
+
 async function findClosest(roomCategory: RoomCategory) {
-    const startPointId = pathfindStart.value?.doorAtPointId;
-    if (!startPointId) {
-        alert("no start!!1!!");
+    roomSelection.deselect();
+    isPathfinding.value = "finding_closest";
+    pathfindCategory.value = roomCategory;
+    if (pathfindStart.value === null) {
+        searchPrompt.value = "";
+        selectRoomCallback.value = {
+            text: "Från",
+            callback: (room) => {
+                pathfindStart.value = room;
+                findClosest(roomCategory);
+            }
+        };
+        showSearchSuggestions.value = true;
         return;
     }
-    const res = await apiPost("map/pathfinding/find_closest", { startPointId, endCategoryId: roomCategory.id })
-        .catch(errorHandler([
-            [(json: any) => !json.success, () => Swal.fire({
-                title: "Kunde inte hitta något!",
-                text: "Vi gick vilse, vi kunde inte hittade närmaste " + roomCategory.name,
-                icon: "error"
-            })]
-        ]));
-    if (!res) return;
+}
 
-    pathfindPath.value = res.path;
+function pathfindStartInputClick() {
+    searchPrompt.value = "";
+    selectRoomCallback.value = {
+        text: "Från",
+        callback: (room) => {
+            pathfindStart.value = room;
+        }
+    };
+    showSearchSuggestions.value = true;
+}
+
+function pathfindEndInputClick() {
+    searchPrompt.value = "";
+    selectRoomCallback.value = {
+        text: "Till",
+        callback: (room) => {
+            roomSelection.select(room.id);
+        }
+    };
+    showSearchSuggestions.value = true;
+}
+
+function stopPathfinding() {
+    isPathfinding.value = false;
+    pathfindCategory.value = null;
+    selectRoomCallback.value = null;
 }
 
 </script>
@@ -176,28 +256,33 @@ async function findClosest(roomCategory: RoomCategory) {
     </div>
     <div class="overlay">
         <div class="upper">
-            <template v-if="isPathfinding">
+            <template v-if="isPathfinding && !selectRoomCallback">
                 <SearchBar
-                    v-model="searchPrompt"
+                    :model-value="pathfindStart?.name ?? ''"
                     :show-back-arrow="true"
                     prefix="Från"
-                    @focus="showSearchSuggestions = true"
-                    @back="isPathfinding = false"
+                    @focus="pathfindStartInputClick"
+                    @back="stopPathfinding"
                 />
                 <SearchBar
-                    v-model="searchPrompt"
+                    v-if="isPathfinding === 'pathfinding'"
+                    :model-value="selectedRoom?.name ?? ''"
                     :show-back-arrow="true"
                     prefix="Till"
-                    @focus="showSearchSuggestions = true"
-                    @back="isPathfinding = false"
+                    @focus="pathfindEndInputClick"
+                    @back="stopPathfinding"
                 />
+                <div
+                    v-if="isPathfinding === 'finding_closest'"
+                >Närmaste {{ pathfindCategory?.name }}</div>
             </template>
             <template v-else>
                 <SearchBar
                     v-model="searchPrompt"
                     :show-back-arrow="showSearchSuggestions"
+                    :prefix="selectRoomCallback?.text"
                     @focus="showSearchSuggestions = true"
-                    @back="showSearchSuggestions = false"
+                    @back="stopPathfinding"
                 />
             </template>
             <div class="search-suggestions"
@@ -207,6 +292,7 @@ async function findClosest(roomCategory: RoomCategory) {
                 :rooms="data.rooms"
                 :room-categories="data.roomCategories"
                 :prompt="searchPrompt"
+                :show-categories="selectRoomCallback === null"
                 @select-room="selectRoomFromSuggestion"
                 @select-room-category="findClosest"
                 />

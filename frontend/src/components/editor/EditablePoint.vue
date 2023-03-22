@@ -37,6 +37,9 @@ const emit = defineEmits<{
 
     /** Called when a new room has been created for this point. */
     (e: "new-room", room: Room): void;
+
+    /** Called when connections are removed from the point.  */
+    (e: "remove-connections", pointConnectionIds: number[]): void;
 }>();
 
 const selection = useSelection("point", toRef(props, "id"));
@@ -84,6 +87,10 @@ const movement = useMovement({
             });
             const roomSelection = useSelection("room");
             roomSelection.select(roomId);
+        },
+        "x": async () => {
+            const res = await apiPost(`map/${route.params.map_id}/point_connection/remove_all_from_point`, { pointId: props.id });
+            emit("remove-connections", res.ids.map((obj: { id: number }) => obj.id));
         }
     }
 });
@@ -118,6 +125,11 @@ watch(selection.selected, (selected) => {
                 id: "new_room",
                 description: "Skapa nytt rum",
                 keys: ["r"]
+            },
+            {
+                id: "remove_connections",
+                description: "Ta bort anslutningar",
+                keys: ["x"]
             }
         ];
     }

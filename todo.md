@@ -1,5 +1,5 @@
 - [ ] Staircases
 - [x] Creating cross part connections
-- [ ] UI for pathfinding
+- [x] UI for pathfinding
 - [ ] desktop UI
 - [ ] Import the data

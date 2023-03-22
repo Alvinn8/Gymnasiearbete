@@ -284,6 +284,7 @@ function changeBackgroundScale(newScale: number) {
                     @click="() => connectionManager.clickPoint(point, mapPartId)"
                     @right-click="(e) => connectionManager.rightClickPoint(e, point, mapPartId)"
                     @new-room="(room) => data && data.rooms.push(room)"
+                    @remove-connections="ids => { if (!data) return; data.pointConnections = data.pointConnections.filter(c => !ids.includes(c.id)) }"
                 />
                 <!-- Render connections between points. -->
                 <PointConnection
