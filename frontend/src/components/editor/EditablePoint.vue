@@ -27,7 +27,7 @@ const emit = defineEmits<{
     /**
      * Called when the user presses a key to copy the point.
      */
-    (e: "copy", wall: Point): void;
+    (e: "copy", point: Point): void;
 
     /** Called when the point is clicked. */
     (e: "click"): void;
@@ -40,6 +40,9 @@ const emit = defineEmits<{
 
     /** Called when connections are removed from the point.  */
     (e: "remove-connections", pointConnectionIds: number[]): void;
+
+    /** Called when a new connection was formed due to an extrude operation.  */
+    (e: "new-connection", connectionId: number, pointAId: number, pointBId: number): void;
 }>();
 
 const selection = useSelection("point", toRef(props, "id"));
@@ -91,7 +94,8 @@ const movement = useMovement({
         "x": async () => {
             const res = await apiPost(`map/${route.params.map_id}/point_connection/remove_all_from_point`, { pointId: props.id });
             emit("remove-connections", res.ids.map((obj: { id: number }) => obj.id));
-        }
+        },
+        "e": () => extrudePoint()
     }
 });
 
@@ -115,6 +119,31 @@ async function copyPoint() {
     pointSelection.select(point.id);
 }
 
+async function extrudePoint() {
+    const pointRes = await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point/new`, {})
+        .catch(handleError);
+    
+    if (!pointRes) return;
+    
+    const point = {
+        id: pointRes.id,
+        x: props.x + 20,
+        y: props.y + 20
+    };
+
+    const pointConnectionRes = await apiPost(`map/${route.params.map_id}/point_connection/new`, {
+        point_a_id: props.id,
+        point_b_id: point.id
+    });
+
+    const connectionId = pointConnectionRes.id;
+
+    emit("copy", point);
+    emit("new-connection", connectionId, props.id, point.id);
+
+    pointSelection.select(point.id);
+}
+
 watch(selection.selected, (selected) => {
     if (selected) {
         keybindInfo.groups = [
@@ -130,6 +159,11 @@ watch(selection.selected, (selected) => {
                 id: "remove_connections",
                 description: "Ta bort anslutningar",
                 keys: ["x"]
+            },
+            {
+                id: "extrude",
+                description: "Utvidga väg",
+                keys: ["e"]
             }
         ];
     }

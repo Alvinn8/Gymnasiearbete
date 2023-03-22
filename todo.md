@@ -3,3 +3,4 @@
 - [x] UI for pathfinding
 - [x] desktop UI
 - [ ] Import the data
+- [ ] Show next closest / highlight all

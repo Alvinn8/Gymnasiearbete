@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
 import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room, RoomCategory } from "@/types";
-import { computed, onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
+import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import ChangeBackground from "./ChangeBackground.vue";
@@ -128,7 +128,8 @@ function updateRoom(roomId: number, property: DimensionsProperty, value: number)
 
 async function changeRoomCategory(room: Room) {
     // Get all room categories as an object
-    const obj: {[key: string]: string} = {};
+    const obj: {[key: number]: string} = {};
+    obj[-1] = "Ingen kategori";
     props.roomCategories.forEach(roomCategory => obj[roomCategory.id] = roomCategory.name);
     
     // Ask the user what category to set
@@ -141,7 +142,7 @@ async function changeRoomCategory(room: Room) {
     if (res.value) {
         // Update the room
         const id = parseInt(res.value);
-        room.categoryId = id;
+        room.categoryId = id !== -1 ? id : null;
 
         // Add to the set of changes
         changedRooms.add(room);
@@ -284,7 +285,18 @@ function changeBackgroundScale(newScale: number) {
                     @click="() => connectionManager.clickPoint(point, mapPartId)"
                     @right-click="(e) => connectionManager.rightClickPoint(e, point, mapPartId)"
                     @new-room="(room) => data && data.rooms.push(room)"
-                    @remove-connections="ids => { if (!data) return; data.pointConnections = data.pointConnections.filter(c => !ids.includes(c.id)) }"
+                    @remove-connections="ids => {
+                        if (!data) return;
+                        data.pointConnections = data.pointConnections.filter(c => !ids.includes(c.id))
+                    }"
+                    @new-connection="(connectionId, pointAId, pointBId) => {
+                        if (!data) return;
+                        data.pointConnections.push({
+                            id: connectionId,
+                            point_a: data.points.find(point => point.id === pointAId)!,
+                            point_b: data.points.find(point => point.id === pointBId)!
+                        });
+                    }"
                 />
                 <!-- Render connections between points. -->
                 <PointConnection

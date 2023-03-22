@@ -3,7 +3,7 @@ import { apiGet, apiPost, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, PointWithZ, Room, RoomCategory, RoomWithZ } from "@/types";
+import type { MapPart as MapPartType, PointWithZ, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
