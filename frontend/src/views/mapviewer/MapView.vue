@@ -55,7 +55,7 @@ watch(
 
 type RoomCallback = {
     text: string;
-    callback: (room: Room) => void;
+    callback: (room: RoomWithZ) => void;
 }
 
 // Search
@@ -87,6 +87,7 @@ function selectRoomFromSuggestion(room: RoomWithZ) {
 watch([searchPrompt, selectRoomCallback], () => {
     // We only want to select rooms when we are searching.
     if (selectRoomCallback.value) return;
+    if (searchPrompt.value.trim().length === 0) return;
     const room = data.value?.rooms.find(room => room.name === searchPrompt.value);
     if (room) {
         roomSelection.select(room.id);
@@ -101,7 +102,7 @@ const isHighestFloor = computed(() => {
 });
 
 const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
-const pathfindStart = ref<Room | null>(null);
+const pathfindStart = ref<RoomWithZ | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
 const pathfindCategory = ref<RoomCategory | null>(null);
 const pathfindConnections = computed(() => {
@@ -119,17 +120,12 @@ const pathfindConnections = computed(() => {
     return array;
 });
 
-async function pathfindToRoom(room: Room) {
-    roomSelection.select(room.id);
-    isPathfinding.value = "pathfinding";
-}
-
 watch([isPathfinding, pathfindStart, selectedRoom], async () => {
     if (isPathfinding.value === "pathfinding" && pathfindStart.value !== null && selectedRoom.value !== null) {
         const endPointId = selectedRoom.value.doorAtPointId;
         const startPointId = pathfindStart.value.doorAtPointId;
 
-        console.log("Pathfinding");
+        console.log(selectedRoom.value, pathfindStart.value);
         const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
             .catch(errorHandler([
                 [(json: any) => !json.success, () => Swal.fire({
@@ -152,7 +148,6 @@ watch([isPathfinding, pathfindStart, pathfindCategory], async () => {
             startPointId,
             endCategoryId: roomCategory.id
         };
-        console.log("Finding closest " + roomCategory.name);
         const res = await apiPost("map/pathfinding/find_closest", input)
             .catch(errorHandler([
                 [(json: any) => !json.success, () => Swal.fire({
@@ -198,6 +193,8 @@ async function findClosest(roomCategory: RoomCategory) {
         };
         showSearchSuggestions.value = true;
         return;
+    } else {
+        showSearchSuggestions.value = false;
     }
 }
 
@@ -227,6 +224,15 @@ function stopPathfinding() {
     isPathfinding.value = false;
     pathfindCategory.value = null;
     selectRoomCallback.value = null;
+    showSearchSuggestions.value = false;
+}
+
+function formatRoomName(room: RoomWithZ | null) {
+    if (!room) return "";
+    if (room.name) return room.name;
+    const roomCategory = data.value?.roomCategories.find(roomCategory => roomCategory.id === room.categoryId);
+    if (!roomCategory) return "Rum";
+    return `${roomCategory.name} (specifik)`;
 }
 
 </script>
@@ -258,7 +264,7 @@ function stopPathfinding() {
         <div class="upper">
             <template v-if="isPathfinding && !selectRoomCallback">
                 <SearchBar
-                    :model-value="pathfindStart?.name ?? ''"
+                    :model-value="formatRoomName(pathfindStart)"
                     :show-back-arrow="true"
                     prefix="Från"
                     @focus="pathfindStartInputClick"
@@ -266,7 +272,7 @@ function stopPathfinding() {
                 />
                 <SearchBar
                     v-if="isPathfinding === 'pathfinding'"
-                    :model-value="selectedRoom?.name ?? ''"
+                    :model-value="formatRoomName(selectedRoom)"
                     :show-back-arrow="true"
                     prefix="Till"
                     @focus="pathfindEndInputClick"
@@ -274,7 +280,8 @@ function stopPathfinding() {
                 />
                 <div
                     v-if="isPathfinding === 'finding_closest'"
-                >Närmaste {{ pathfindCategory?.name }}</div>
+                    class="closest-box"
+                ><strong>Till: </strong>Närmaste {{ pathfindCategory?.name }}</div>
             </template>
             <template v-else>
                 <SearchBar
@@ -297,21 +304,31 @@ function stopPathfinding() {
                 @select-room-category="findClosest"
                 />
             </div>
+            <div class="desktop-room-info-container">
+                <RoomInfo
+                    v-if="selectedRoom && data"
+                    :room="selectedRoom"
+                    :room-categories="data.roomCategories"
+                    @pathfind="isPathfinding = 'pathfinding'"
+                />
+            </div>
             <div class="floor-container">
                 <button class="btn btn-secondary btn-sm" :disabled="isLowestFloor" @click="floor--">Ned</button>
                 <span>Ändra våning</span>
                 <button class="btn btn-secondary btn-sm" :disabled="isHighestFloor" @click="floor++">Upp</button>
             </div>
         </div>
-        <MobilePanel :visible="selectedRoom != null" :sticky="true">
-            <div v-if="selectedRoom && data" class="container">
-                <RoomInfo
-                    :room="selectedRoom"
-                    :room-categories="data.roomCategories"
-                    @pathfind="() => selectedRoom && pathfindToRoom(selectedRoom)"
-                />
-            </div>
-        </MobilePanel>
+        <div class="mobile-panel-container">
+            <MobilePanel :visible="selectedRoom != null" :sticky="true">
+                <div v-if="selectedRoom && data" class="container">
+                    <RoomInfo
+                        :room="selectedRoom"
+                        :room-categories="data.roomCategories"
+                        @pathfind="isPathfinding = 'pathfinding'"
+                    />
+                </div>
+            </MobilePanel>
+        </div>
     </div>
 </template>
 
@@ -351,6 +368,7 @@ function stopPathfinding() {
     height: 100vh;
     padding-top: 80px;
     z-index: 9;
+    overflow: auto;
 }
 .floor-container {
     position: absolute;
@@ -365,10 +383,45 @@ function stopPathfinding() {
 .floor-container span {
     margin: 3px 5px;
 }
+.closest-box {
+    width: calc(100vw - 20px);
+    border-radius: 10px;
+    border: 1px solid #bbb;
+    box-shadow: 2px 2px 4px 1px;
+    padding: 12px;
+    margin: 10px;
+    cursor: default;
+    background-color: white;
+}
+.desktop-room-info-container {
+    /* On mobile, only show the bottom sheet / mobile panel, and hide the
+       desktop container. */
+    display: none;
+
+    /* CSS (desktop only) */
+    z-index: 8;
+    background-color: rgb(255, 255, 255, 0.75);
+    border-right: 1px solid #bbb;
+    border-bottom: 1px solid #bbb;
+    width: 410px;
+    padding: 20px;
+    border-bottom-right-radius: 5px;
+}
 @media (min-width: 600px)  {
+    .closest-box {
+        max-width: 400px;
+    }
     .search-suggestions {
         width: 420px;
         border-right: 1px solid #bbb;
+    }
+    .mobile-panel-container {
+        /* Hide mobile panel on desktop. */
+        display: none;
+    }
+    .desktop-room-info-container {
+        /* And show the desktop container. */
+        display: block;
     }
 }
 

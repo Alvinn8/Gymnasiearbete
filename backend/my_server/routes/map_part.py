@@ -1,7 +1,7 @@
 from flask import request
 from my_server import app
 from my_server.auth import map_access_required, map_part_required, map_view_access
-from my_server.database_handler import create_connection
+from my_server.database_handler import create_connection, db_to_json
 
 
 @app.route("/api/map/<map_id>/part/new", methods=["POST"])
@@ -56,7 +56,7 @@ def map_part_info(jwt, map_id, part_id):
     ).fetchall()
 
     rooms_data = cur.execute(
-        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height FROM Room " +
+        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height, category_id FROM Room " +
         "JOIN Point ON Point.id = door_at_point_id " +
         "WHERE Point.map_part_id = ?",
         (part_id,)
@@ -74,43 +74,10 @@ def map_part_info(jwt, map_id, part_id):
 
     conn.close()
 
-    walls = []
-    for wall_data in walls_data:
-        walls.append({
-            "id": wall_data[0],
-            "x": wall_data[1],
-            "y": wall_data[2],
-            "width": wall_data[3],
-            "height": wall_data[4]
-        })
-
-    points = []
-    for point_data in points_data:
-        points.append({
-            "id": point_data[0],
-            "x": point_data[1],
-            "y": point_data[2]
-        })
-
-    point_connections = []
-    for point_connection in point_connections_data:
-        point_connections.append({
-            "id": point_connection[0],
-            "point_a_id": point_connection[1],
-            "point_b_id": point_connection[2]
-        })
-
-    rooms = []
-    for room_data in rooms_data:
-        rooms.append({
-            "id": room_data[0],
-            "doorAtPointId": room_data[1],
-            "name": room_data[2],
-            "x": room_data[3],
-            "y": room_data[4],
-            "width": room_data[5],
-            "height": room_data[6]
-        })
+    walls = db_to_json(walls_data, ["id", "x", "y", "width", "height"])
+    points = db_to_json(points_data, ["id", "x", "y"])
+    point_connections = db_to_json(point_connections_data, ["id", "point_a_id", "point_b_id"])
+    rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
 
     return {
         "success": True,
@@ -148,7 +115,7 @@ def map_part_brief_info(map_id, part_id):
     ).fetchall()
 
     rooms_data = cur.execute(
-        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height FROM Room " +
+        "SELECT Room.id, door_at_point_id, name, Room.x, Room.y, Room.width, Room.height, category_id FROM Room " +
         "JOIN Point ON Point.id = door_at_point_id " +
         "WHERE Point.map_part_id = ?",
         (part_id,)
@@ -156,35 +123,9 @@ def map_part_brief_info(map_id, part_id):
 
     conn.close()
 
-    walls = []
-    for wall_data in walls_data:
-        walls.append({
-            "id": wall_data[0],
-            "x": wall_data[1],
-            "y": wall_data[2],
-            "width": wall_data[3],
-            "height": wall_data[4]
-        })
-
-    points = []
-    for point_data in points_data:
-        points.append({
-            "id": point_data[0],
-            "x": point_data[1],
-            "y": point_data[2]
-        })
-
-    rooms = []
-    for room_data in rooms_data:
-        rooms.append({
-            "id": room_data[0],
-            "doorAtPointId": room_data[1],
-            "name": room_data[2],
-            "x": room_data[3],
-            "y": room_data[4],
-            "width": room_data[5],
-            "height": room_data[6]
-        })
+    walls = db_to_json(walls_data, ["id", "x", "y", "width", "height"])
+    points = db_to_json(points_data, ["id", "x", "y"])
+    rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
 
     return {
         "success": True,

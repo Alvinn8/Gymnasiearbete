@@ -16,6 +16,7 @@ const props = defineProps<{
     width: number;
     height: number;
     point: Position;
+    hasCategory: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -67,7 +68,10 @@ watch(selection.selected, (selected) => {
                   width: ${width}px;
                   height: ${height}px;
                   opacity: ${viewMode.opacity};`"
-        :class="{ hover: selection.selected.value }"
+        :class="{
+            hover: selection.selected.value,
+            missingCategory: !hasCategory
+        }"
         @mousedown="(e) => { movement.mousedown(e); selection.select() }"
     >
         <span v-if="name">{{ name }}</span>
@@ -103,5 +107,8 @@ span {
 .hover span {
     background: rgb(0, 0, 0, 0.05);
     text-emphasis-color: rgb(0, 0, 0, 0.25);
+}
+.missingCategory {
+    background-color: rgba(255, 0, 0, 0.15);
 }
 </style>

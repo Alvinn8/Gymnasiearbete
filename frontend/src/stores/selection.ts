@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
+import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 export type SelectionType = "point" | "wall" | "room";
 
