@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 
-export type SelectionType = "point" | "wall" | "room";
+export type SelectionType = "point" | "wall" | "room" | "staircase";
 
 export interface SelectionRef {
     type: SelectionType;

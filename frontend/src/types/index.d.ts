@@ -92,3 +92,13 @@ export type RoomCategory = {
     id: number;
     name: string;
 }
+
+/**
+ * A staircase on the map.
+ */
+export type Staircase = Dimensions & {
+    id: number;
+    mapPartId: number;
+    /** The id of another staircase. */
+    connectsTo: number | null;
+};

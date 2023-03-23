@@ -6,7 +6,7 @@ import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 
 const emit = defineEmits<{
-    (e: "new-point", wall: Point): void
+    (e: "new-point", point: Point): void
 }>();
 
 const route = useRoute();

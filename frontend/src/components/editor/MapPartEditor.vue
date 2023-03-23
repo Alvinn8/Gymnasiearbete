@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { apiGet, apiPost, handleError } from "@/api/api";
-import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room, RoomCategory } from "@/types";
-import { onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
+import type { DimensionsProperty, Point, Position, Wall, PointConnection as PointConnectionType, Room, RoomCategory, Staircase } from "@/types";
+import { computed, onMounted, onUnmounted, provide, ref, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
 import ChangeBackground from "./ChangeBackground.vue";
@@ -14,6 +14,10 @@ import PointConnection from "./PointConnection.vue";
 import MapEditorBase from "./MapEditorBase.vue";
 import Swal from "sweetalert2";
 import { useConnectionManager } from "@/stores/connectionManager";
+import { useSelection } from "@/stores/selection";
+import RoomInfo from "../mapviewer/RoomInfo.vue";
+import NewStaircase from "./NewStaircase.vue";
+import EditableStaircase from "./EditableStaircase.vue";
 
 const props = defineProps<{
     mapPartId: number;
@@ -26,10 +30,12 @@ const emit = defineEmits<{
 
 const data = ref<null | {
     name: string;
+    z: number;
     walls: Wall[];
     points: Point[];
     rooms: Room[];
     pointConnections: PointConnectionType[];
+    staircases: Staircase[];
     crossMapPartPoints: Set<Point>;
     background: string | null;
     backgroundScale: number;
@@ -40,6 +46,10 @@ const connectionManager = useConnectionManager((newConnection: PointConnectionTy
     if (!data.value) return;
     data.value.pointConnections.push(newConnection);
 });
+const roomSelection = useSelection("room");
+const selectedRoom = computed(() =>
+    data.value?.rooms.find(room => room.id === roomSelection.selected.value) ?? null
+);
 
 provide(mapPartIdKey, toRef(props, "mapPartId"));
 
@@ -51,12 +61,14 @@ watch(props, async () => {
     const crossMapPartPoints = new Set<Point>();
     data.value = {
         name: info.name,
+        z: info.z,
         walls: info.walls,
         points: info.points,
         rooms: info.rooms,
         background: info.background,
         backgroundScale: info.background_scale,
         crossMapPartPoints: crossMapPartPoints,
+        staircases: info.staircases,
         pointConnections: info.point_connections.map((pointConnection: any) => {
             const pointA = info.points.find((point: Point) => point.id === pointConnection.point_a_id);
             const pointB = info.points.find((point: Point) => point.id === pointConnection.point_b_id);
@@ -79,6 +91,7 @@ watch(props, async () => {
 const changedWalls: Set<Wall> = new Set();
 const changedPoints: Set<Point> = new Set();
 const changedRooms: Set<Room> = new Set();
+const changedStaircases: Set<Staircase> = new Set();
 let pendingChangesId: number | null = null;
 
 function updateWall(wallId: number, property: DimensionsProperty, value: number) {
@@ -123,6 +136,15 @@ function updateRoom(roomId: number, property: DimensionsProperty, value: number)
     changedRooms.add(room);
 
     // And save when its time
+    saveWithDebounce();
+}
+
+function updateStaircase(staircaseId: number, property: DimensionsProperty, value: number) {
+    const staircase = data.value?.staircases.find(staircase => staircase.id === staircaseId);
+    if (!staircase) return;
+
+    staircase[property] = value;
+    changedStaircases.add(staircase);
     saveWithDebounce();
 }
 
@@ -194,6 +216,13 @@ function saveWithDebounce() {
             changedRooms.clear();
         }
 
+        if (changedStaircases.size > 0) {
+            await apiPost(`map/${route.params.map_id}/part/${props.mapPartId}/staircase/edit`, {
+                changes: [...changedStaircases.values()]
+            }).catch(handleError);
+            changedStaircases.clear();
+        }
+
         // Log
         console.log("%c ✔ Saved", "color: green;");
     }, 5000);
@@ -246,11 +275,20 @@ function changeBackgroundScale(newScale: number) {
             <NewPoint
                 @new-point="(point) => data?.points.push(point)"
             />
+            <NewStaircase
+                @new-staircase="(staircase) => data?.staircases.push(staircase)"
+            />
             <ChangeBackground
                 v-if="data"
                 :scale="data.backgroundScale"
                 @change-background="(newBackground) => data && (data.background = newBackground)"
                 @change-scale="changeBackgroundScale"
+            />
+            <RoomInfo
+                v-if="selectedRoom"
+                :room="selectedRoom"
+                :room-categories="roomCategories"
+                :show-navigate-button="false"
             />
         </template>
         <template #panzoom>
@@ -319,6 +357,17 @@ function changeBackgroundScale(newScale: number) {
                     :has-category="Boolean(room.categoryId)"
                     @change="(property, value) => updateRoom(room.id, property, value)"
                     @change-category="changeRoomCategory(room)"
+                />
+                <!-- Render staircases -->
+                <EditableStaircase
+                    v-for="staircase in data.staircases"
+                    :key="staircase.id"
+                    :id="staircase.id"
+                    :x="staircase.x"
+                    :y="staircase.y"
+                    :width="staircase.width"
+                    :height="staircase.height"
+                    @change="(property, value) => updateStaircase(staircase.id, property, value)"
                 />
                 <!-- Draw the line for forming new connections. -->
                 <PointConnection

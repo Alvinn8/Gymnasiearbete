@@ -67,6 +67,11 @@ def map_part_info(jwt, map_id, part_id):
         (part_id,)
     ).fetchone()
 
+    staircases_data = cur.execute(
+        "SELECT id, x, y, width, height, connects_to FROM Staircase WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
     name = map_part_data[0]
     background = map_part_data[1]
     background_scale = map_part_data[2]
@@ -78,6 +83,7 @@ def map_part_info(jwt, map_id, part_id):
     points = db_to_json(points_data, ["id", "x", "y"])
     point_connections = db_to_json(point_connections_data, ["id", "point_a_id", "point_b_id"])
     rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
+    staircases = db_to_json(staircases_data, ["id", "x", "y", "width", "height", "connectsTo"])
 
     return {
         "success": True,
@@ -88,7 +94,8 @@ def map_part_info(jwt, map_id, part_id):
         "rooms": rooms,
         "point_connections": point_connections,
         "background": background,
-        "background_scale": background_scale
+        "background_scale": background_scale,
+        "staircases": staircases
     }
 
 
@@ -121,11 +128,17 @@ def map_part_brief_info(map_id, part_id):
         (part_id,)
     ).fetchall()
 
+    staircases_data = cur.execute(
+        "SELECT id, map_part_id, x, y, width, height, connects_to FROM Staircase WHERE map_part_id = ?",
+        (part_id,)
+    ).fetchall()
+
     conn.close()
 
     walls = db_to_json(walls_data, ["id", "x", "y", "width", "height"])
     points = db_to_json(points_data, ["id", "x", "y"])
     rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
+    staircases = db_to_json(staircases_data, ["id", "mapPartId", "x", "y", "width", "height", "connectsTo"])
 
     return {
         "success": True,
@@ -136,7 +149,8 @@ def map_part_brief_info(map_id, part_id):
         "rooms": rooms,
         "offsetX": part_data[0],
         "offsetY": part_data[1],
-        "rotationDeg": part_data[4]
+        "rotationDeg": part_data[4],
+        "staircases": staircases
     }
 
 

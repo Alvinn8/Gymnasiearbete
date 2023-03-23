@@ -4,3 +4,4 @@
 - [x] desktop UI
 - [ ] Import the data
 - [ ] Show next closest / highlight all
+- [ ] Marking favorites on map viewer

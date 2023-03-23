@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
-import { ref, toRef, watch } from "vue";
+import { onMounted, ref, toRef, watch } from "vue";
 
 const props = defineProps<{
     id: number;
@@ -17,6 +17,7 @@ const hovered = ref(false);
 const selection = useSelection("room", toRef(props, "id"));
 
 const divRef = ref<HTMLDivElement | null>(null);
+const spanRef = ref<HTMLSpanElement | null>(null);
 const panzoom = usePanzoom();
 
 watch([selection.selected, panzoom, divRef], () => {
@@ -32,6 +33,25 @@ watch([selection.selected, panzoom, divRef], () => {
         panzoom.value.smoothMoveTo(newX, newY);
     }
 }, { immediate: true });
+
+onMounted(() => {
+    if (!divRef.value || !spanRef.value) return;
+    
+    const divBox = divRef.value.getBoundingClientRect();
+    let spanBox = spanRef.value.getBoundingClientRect();
+
+    let fontSize = 25;
+    while (spanBox.width > divBox.width || spanBox.height > divBox.height) {
+        // The text is too big, we need to make it smaller.
+        fontSize -= 5;
+        spanRef.value.style.fontSize = fontSize + "px";
+        if (fontSize <= 10) {
+            spanRef.value.style.padding = "1px";
+            spanRef.value.style.borderRadius = "3px";
+        }
+        spanBox = spanRef.value.getBoundingClientRect();
+    }
+});
 
 </script>
 
@@ -49,6 +69,7 @@ watch([selection.selected, panzoom, divRef], () => {
     >
         <span
             v-if="name"
+            ref="spanRef"
             :style="{ transform: `rotate(${counterRotationDeg}deg)` }"
         >{{ name }}</span>
     </div>
