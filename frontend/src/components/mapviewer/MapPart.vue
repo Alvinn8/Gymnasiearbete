@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { apiGet, handleError } from "@/api/api";
-import type { Point, Room, Wall } from "@/types";
+import type { Point, Room, StaircaseWithZ, Wall } from "@/types";
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import MapRoom from "./MapRoom.vue";
+import MapStaircase from "./MapStaircase.vue";
 import MapWall from "./MapWall.vue";
 
 const props = defineProps<{
@@ -11,16 +12,19 @@ const props = defineProps<{
     offsetX: number;
     offsetY: number;
     rotationDeg: number;
+    z: number;
 }>();
 
 const emit = defineEmits<{
     (e: "data", data: Data): void;
+    (e: "change-floor", floor: number): void;
 }>();
 
 type Data = {
     walls: Wall[];
     points: Point[];
     rooms: Room[];
+    staircases: StaircaseWithZ[];
 };
 
 const data = ref<Data | null>(null);
@@ -37,7 +41,8 @@ watch(
         data.value = {
             walls: info.walls,
             points: info.points,
-            rooms: info.rooms
+            rooms: info.rooms,
+            staircases: info.staircases
         };
         emit("data", data.value);
     },
@@ -70,6 +75,22 @@ watch(
             :width="room.width"
             :height="room.height"
             :counter-rotation-deg="-rotationDeg"
+        />
+
+        <MapStaircase
+            v-for="staircase in data.staircases"
+            :key="staircase.id"
+            :id="staircase.id"
+            :x="staircase.x + offsetX"
+            :y="staircase.y + offsetY"
+            :width="staircase.width"
+            :height="staircase.height"
+            :rotation-deg="staircase.rotationDeg"
+            :z="props.z"
+            :delta-z="staircase.deltaZ"
+            :connects-to="staircase.connectsTo"
+            :connects-to-z="staircase.connectsToZ"
+            @change-floor="(floor) => emit('change-floor', floor)"
         />
     </div>
 </template>

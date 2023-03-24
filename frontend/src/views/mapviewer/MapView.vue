@@ -247,7 +247,9 @@ function formatRoomName(room: RoomWithZ | null) {
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
                 :rotation-deg="mapPart.rotationDeg"
+                :z="mapPart.z"
                 @data="(data) => data.rooms.push(...data.rooms)"
+                @change-floor="newFloor => floor = newFloor"
             />
             
             <template v-if="pathfindPath">

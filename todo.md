@@ -1,4 +1,4 @@
-- [ ] Staircases
+- [x] Staircases
 - [x] Creating cross part connections
 - [x] UI for pathfinding
 - [x] desktop UI

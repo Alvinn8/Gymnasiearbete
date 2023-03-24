@@ -50,6 +50,7 @@ const roomSelection = useSelection("room");
 const selectedRoom = computed(() =>
     data.value?.rooms.find(room => room.id === roomSelection.selected.value) ?? null
 );
+const staircaseSelection = useSelection("staircase");
 
 provide(mapPartIdKey, toRef(props, "mapPartId"));
 
@@ -139,7 +140,7 @@ function updateRoom(roomId: number, property: DimensionsProperty, value: number)
     saveWithDebounce();
 }
 
-function updateStaircase(staircaseId: number, property: DimensionsProperty, value: number) {
+function updateStaircase(staircaseId: number, property: keyof Staircase, value: number) {
     const staircase = data.value?.staircases.find(staircase => staircase.id === staircaseId);
     if (!staircase) return;
 
@@ -262,6 +263,21 @@ function changeBackgroundScale(newScale: number) {
     });
 }
 
+async function connectStaircases(idA: number, idB: number) {
+    if (!data.value) return;
+    const res = await apiPost(`map/${route.params.map_id}/staircase/connect`, { idA, idB }).catch(handleError);
+    if (res) {
+        const staircaseA = data.value.staircases.find(staircase => staircase.id === idA);
+        const staircaseB = data.value.staircases.find(staircase => staircase.id === idB);
+        if (staircaseA) staircaseA.connectsTo = idB;
+        if (staircaseB) staircaseB.connectsTo = idA;
+        Swal.fire({
+            icon: "success",
+            title: "En trappanslutning har bildats."
+        });
+    }
+}
+
 </script>
 
 <template>
@@ -367,7 +383,11 @@ function changeBackgroundScale(newScale: number) {
                     :y="staircase.y"
                     :width="staircase.width"
                     :height="staircase.height"
+                    :has-connection="Boolean(staircase.connectsTo)"
+                    :rotation-deg="staircase.rotationDeg"
                     @change="(property, value) => updateStaircase(staircase.id, property, value)"
+                    @copy="(staircase) => data && data.staircases.push(staircase)"
+                    @connect="connectStaircases"
                 />
                 <!-- Draw the line for forming new connections. -->
                 <PointConnection
@@ -381,16 +401,25 @@ function changeBackgroundScale(newScale: number) {
     <!-- The message box amount cross-map-part connections. -->
     <div
         v-if="connectionManager.selectedPoint && connectionManager.selectedPoint.mapPartId !== mapPartId"
-        class="cross-map-part-warning alert alert-danger"
+        class="important-warning alert alert-danger"
     >
         <span>En anslutning mellan kartdelar skapas just nu.</span>
         <br>
         <span>Klicka på punkten som ska anslutas</span>
     </div>
+    <!-- The message regarding connecting staircases. -->
+    <div
+        v-if="staircaseSelection.selected.value"
+        class="important-warning alert alert-danger"
+    >
+        <span>Klicka på en annan trappa för att ansluta den.</span>
+        <br>
+        <span>Klicka på en punkt, vägg eller rum för att avbryta.</span>
+    </div>
 </template>
 
 <style scoped>
-.cross-map-part-warning {
+.important-warning {
     position: fixed;
     bottom: 10px;
     left: 50%;

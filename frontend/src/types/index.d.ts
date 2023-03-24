@@ -99,6 +99,13 @@ export type RoomCategory = {
 export type Staircase = Dimensions & {
     id: number;
     mapPartId: number;
+    rotationDeg: number;
     /** The id of another staircase. */
     connectsTo: number | null;
+};
+
+export type StaircaseWithZ = Staircase & {
+    /** The z of the map part that the staircase connects to. */
+    connectsToZ: number;
+    deltaZ: number;
 };

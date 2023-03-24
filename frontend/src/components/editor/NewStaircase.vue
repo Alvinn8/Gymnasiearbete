@@ -25,7 +25,8 @@ async function newStaircase() {
         y: 0,
         width: 40,
         height: 40,
-        connectsTo: null
+        connectsTo: null,
+        rotationDeg: 0
     };
 
     emit("new-staircase", staircase);

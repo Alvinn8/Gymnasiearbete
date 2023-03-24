@@ -194,6 +194,7 @@ async function changePublicStatus(isPublic: boolean) {
                 :offset-x="mapPart.offsetX"
                 :offset-y="mapPart.offsetY"
                 :rotation-deg="mapPart.rotationDeg"
+                :z="mapPart.z"
             />
         </template>
         <template #aside>

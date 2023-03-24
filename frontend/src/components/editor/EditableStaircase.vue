@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { apiPost, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import { useViewMode } from "@/stores/viewMode";
-import type { DimensionsProperty } from "@/types";
-import { toRef, watch } from "vue";
+import type { Staircase } from "@/types";
+import { inject, toRef, watch } from "vue";
+import { useRoute } from "vue-router";
+import { mapPartIdKey } from "../keys";
 
 const props = defineProps<{
     id: number;
@@ -12,26 +15,68 @@ const props = defineProps<{
     y: number;
     width: number;
     height: number;
+    rotationDeg: number;
+    hasConnection: boolean;
 }>();
 
 const emit = defineEmits<{
     /**
      * Called when the staircase dimensions change.
      */
-    (e: "change", property: DimensionsProperty, value: number): void;
+    (e: "change", property: keyof Staircase, value: number): void;
+
+    /**
+     * Called when the staircase is copied.
+     */
+    (e: "copy", staircase: Staircase): void;
+
+    /**
+     * Called when two staircases are connected.
+     */
+    (e: "connect", idA: number, idB: number): void;
 }>();
 
 const selection = useSelection("staircase", toRef(props, "id"));
+const staircaseSelection = useSelection("staircase");
 const viewMode = useViewMode();
 const keybindInfo = useKeybindInfo();
+const mapPartId = inject(mapPartIdKey);
+const route = useRoute();
 
 const movement = useMovementAndResize({
     dimensions: props,
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
-    onCopy: () => {}
+    onCopy: () => copyStaircase(),
+    customKeybinds: {
+        "r": () => {
+            const newRotation = (props.rotationDeg + 90) % 360;
+            emit("change", "rotationDeg", newRotation);
+        }
+    }
 });
 
+async function copyStaircase() {
+    const res = await apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/staircase/new`, {})
+        .catch(handleError);
+    
+    if (!res) return;
+    
+    const staircase: Staircase = {
+        id: res.id,
+        mapPartId: mapPartId!.value,
+        x: props.x + 20,
+        y: props.y + 20,
+        width: props.width,
+        height: props.height,
+        connectsTo: null,
+        rotationDeg: 0
+    };
+
+    emit("copy", staircase);
+
+    staircaseSelection.select(staircase.id);
+}
 watch(selection.selected, (selected) => {
     if (selected) {
         keybindInfo.groups = [
@@ -41,6 +86,17 @@ watch(selection.selected, (selected) => {
         ];
     }
 });
+
+function mouseDown(e: MouseEvent) {
+    movement.mousedown(e);
+    if (typeof staircaseSelection.selected.value === "number" && staircaseSelection.selected.value !== props.id) {
+        // A different staircase was selected and this one was clicked. We need to connect the two.
+        emit("connect", staircaseSelection.selected.value, props.id);
+        staircaseSelection.deselect();
+        return;
+    }
+    selection.select();
+}
 
 </script>
 
@@ -52,21 +108,57 @@ watch(selection.selected, (selected) => {
             height: height + 'px',
             opacity: viewMode.opacity
         }"
-        :class="{ hover: selection.selected.value }"
-        @mousedown="(e) => { movement.mousedown(e); selection.select(); }"
-    ></div>
+        :class="{
+            selected: selection.selected.value,
+            noConnection: !hasConnection,
+            ['rotate' + rotationDeg]: true
+        }"
+        @mousedown="mouseDown"
+    >
+    </div>
 </template>
 
 <style scoped>
 div {
+    --rotation-deg: 0deg;
     /** Repeating lines */
-    background: repeating-linear-gradient(90deg, white, white 8px, black 8px, black 10px);
+    background: repeating-linear-gradient(var(--rotation-deg), white, white 8px, black 8px, black 10px);
     position: absolute;
     z-index: 2;
     border: 1px solid black;
-    border-right-width: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.hover {
+.rotate0 {
+    border-bottom-width: 0;
+    border-top-width: 2px;
+    --rotation-deg: 0deg;
+}
+.rotate90 {
+    border-right-width: 0;
+    border-left-width: 2px;
+    --rotation-deg: 90deg;
+}
+.rotate180 {
+    border-top-width: 0;
+    border-bottom-width: 2px;
+    --rotation-deg: 180deg;
+}
+.rotate270 {
+    border-left-width: 0;
+    border-right-width: 2px;
+    --rotation-deg: 270deg;
+}
+.noConnection {
+    border-color: red;
+}
+.selected {
     background-color: rgba(128, 128, 128, 0.2);
+}
+span {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
 }
 </style>
