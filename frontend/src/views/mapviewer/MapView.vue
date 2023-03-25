@@ -458,6 +458,8 @@ function formatRoomName(room: RoomWithZ | null) {
     .closest-box {
         max-width: 400px;
     }
+}
+@media (min-width: 700px)  {
     .search-suggestions {
         width: 420px;
         border-right: 1px solid #bbb;

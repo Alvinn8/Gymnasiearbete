@@ -203,27 +203,27 @@ async function changePublicStatus(isPublic: boolean) {
                 <h2>Våning</h2>
                 <input type="number" v-model="floor">
             </div>
-            <div class="mb-3">
+            <div class="mb-3 overflow-scroll">
                 <h2>Kartdelar</h2>
                 <button class="btn btn-success" @click="newPart">Skapa ny kartdel</button>
+                <div
+                v-for="mapPart of data.mapParts"
+                :key="mapPart.id"
+                class="mb-3"
+                >
+                    <h3>{{ mapPart.name }}</h3>
+                    <button class="btn btn-primary" @click="currentMapPartId = mapPart.id">Redigera</button>
+                    <br>
+                    <input type="number" v-model="mapPart.offsetX">
+                    <input type="number" v-model="mapPart.offsetY">
+                    <input type="number" v-model="mapPart.rotationDeg">
+                    <button
+                        class="btn btn-primary btn-sm"
+                        @click="() => updateOffset(mapPart)"
+                    >Spara</button>
+                </div>
             </div>
-            <div
-            v-for="mapPart of data.mapParts"
-            :key="mapPart.id"
-            class="mb-3"
-            >
-                <h3>{{ mapPart.name }}</h3>
-                <button class="btn btn-primary" @click="currentMapPartId = mapPart.id">Redigera</button>
-                <br>
-                <input type="number" v-model="mapPart.offsetX">
-                <input type="number" v-model="mapPart.offsetY">
-                <input type="number" v-model="mapPart.rotationDeg">
-                <button
-                    class="btn btn-primary btn-sm"
-                    @click="() => updateOffset(mapPart)"
-                >Spara</button>
-            </div>
-            <div class="mb-3">
+            <div class="mb-3 overflow-scroll">
                 <h2>Rumkategorier</h2>
                 <button class="btn btn-success" @click="newRoomCategory">Skapa ny rumkategori</button>
                 <div

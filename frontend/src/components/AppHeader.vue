@@ -33,10 +33,7 @@ function getRegisterUrl() {
             <div class="collapse navbar-collapse" id="navbar-content">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <RouterLink to="/" class="nav-link" active-class="active">Home</RouterLink>
-                    </li>
-                    <li class="nav-item">
-                        <RouterLink to="/test" class="nav-link" active-class="active">Test</RouterLink>
+                        <RouterLink to="/" class="nav-link" active-class="active">Startsida</RouterLink>
                     </li>
                     <li class="nav-item" v-if="!auth.isLoggedIn">
                         <RouterLink :to="getRegisterUrl()" class="nav-link" active-class="active">Skapa konto</RouterLink>

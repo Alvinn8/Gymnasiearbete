@@ -264,3 +264,34 @@ def change_public_status(map_id):
     return {
         "success": True
     }
+
+
+@app.route("/api/map/get_featured_map")
+def get_featured_map():
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    # Get the first public map we can find.
+    map = cur.execute(
+        "SELECT id, name FROM Map WHERE public = 1 LIMIT 1"
+    ).fetchone()
+
+    conn.commit()
+    conn.close()
+
+    if map is None:
+        return {
+            "success": True,
+            "map": None
+        }
+    
+    id, name = map
+
+    return {
+        "success": True,
+        "map": {
+            "id": id,
+            "name": name
+        }
+    }

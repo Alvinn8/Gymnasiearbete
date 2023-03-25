@@ -1,6 +1,8 @@
 # frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+The frontend for the project. Built using pnpm and Vite. Set up using `pnpm install`.
+
+# Info from Vite:
 
 ## Recommended IDE Setup
 

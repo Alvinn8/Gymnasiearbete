@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTap } from "@/composables/tap";
 import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
 import { ref, toRef, watch } from "vue";
@@ -23,6 +24,7 @@ const emit = defineEmits<{
 const selection = useSelection("staircase", toRef(props, "id"));
 const staircaseSelection = useSelection("staircase");
 const panzoom = usePanzoom();
+const tap = useTap(click);
 const divRef = ref<HTMLDivElement | null>(null);
 const flash = ref(false);
 
@@ -70,7 +72,8 @@ function click() {
         }"
         ref="divRef"
         @click="click"
-        @touchend="click"
+        @touchstart="tap.touchStart"
+        @touchend="tap.touchEnd"
     >
         <span v-if="deltaZ && deltaZ > 0">UPP</span>
         <span v-if="deltaZ && deltaZ < 0">NED</span>

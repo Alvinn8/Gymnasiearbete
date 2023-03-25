@@ -1,9 +1,0 @@
-- [x] Staircases
-- [x] Creating cross part connections
-- [x] UI for pathfinding
-- [x] desktop UI
-- [ ] Import the data
-- [x] Show next closest / highlight all
-- [x] Marking favorites on map viewer
-- [ ] Map slug
-- [ ] Index page

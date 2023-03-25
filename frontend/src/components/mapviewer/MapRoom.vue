@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useFavoriteRooms } from "@/stores/favoriteRooms";
 import { useHighlightedRoomCategory } from "@/stores/highlight";
 import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
 import { computed, onMounted, ref, toRef, watch } from "vue";
+import { useTap } from "@/composables/tap";
 
 const props = defineProps<{
     id: number;
@@ -22,6 +22,7 @@ const highlightedRoomCategory = useHighlightedRoomCategory();
 const isHighlighted = computed(() =>
     highlightedRoomCategory.roomCategoryId !== null && highlightedRoomCategory.roomCategoryId === props.categoryId
 );
+const tap = useTap(() => selection.select()); // select on tap
 
 const divRef = ref<HTMLDivElement | null>(null);
 const spanRef = ref<HTMLSpanElement | null>(null);
@@ -79,7 +80,8 @@ onMounted(() => {
         @mouseover="() => isHovered = true"
         @mouseout="() => isHovered = false"
         @click="selection.select()"
-        @touchend="selection.select()"
+        @touchstart="tap.touchStart"
+        @touchend="tap.touchEnd"
     >
         <span
             v-if="name"

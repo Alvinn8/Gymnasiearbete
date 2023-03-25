@@ -28,4 +28,7 @@ import PanZoom from "../PanZoom.vue";
     grid-template-columns: 1fr auto;
     width: 100%;
 }
+aside {
+    max-height: 100vh;
+}
 </style>

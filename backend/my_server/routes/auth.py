@@ -97,7 +97,7 @@ def register_google():
 def login_google():
 
     state = "login-" + os.urandom(32).hex()
-    redirect_url = create_authorize_url(state, request.host)
+    redirect_url = create_authorize_url(state)
 
     return {
         "success": True,

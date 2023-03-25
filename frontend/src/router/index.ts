@@ -40,12 +40,6 @@ const router = createRouter({
             component: () => import("../views/IndexView.vue")
         },
         {
-            path: "/test",
-            name: "test",
-            component: () => import("../views/TestView.vue"),
-            beforeEnter: [requireLogin]
-        },
-        {
             path: "/404",
             name: "NotFound",
             component: () => import("../views/error/NotFound.vue")
