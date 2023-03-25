@@ -9,4 +9,4 @@ app.config.from_object(Config)
 CORS(app)
 
 from my_server import error
-from my_server.routes import auth, map, map_part, wall, point, point_connection, room, room_category, pathfinding, staircase
+from my_server.routes import frontend, auth, map, map_part, wall, point, point_connection, room, room_category, pathfinding, staircase, favorite_room

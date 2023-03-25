@@ -226,7 +226,7 @@ function saveWithDebounce() {
 
         // Log
         console.log("%c ✔ Saved", "color: green;");
-    }, 5000);
+    }, 5000) as unknown as number;
 }
 
 function beforeUnload(e: BeforeUnloadEvent) {

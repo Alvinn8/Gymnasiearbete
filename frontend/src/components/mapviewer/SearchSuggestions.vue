@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useFavoriteRooms } from "@/stores/favoriteRooms";
 import type { RoomCategory, RoomWithZ } from "@/types";
 import { computed } from "vue";
+import StarIcon from "../StarIcon.vue";
 
 const props = defineProps<{
     rooms: RoomWithZ[];
@@ -14,11 +16,25 @@ const emit = defineEmits<{
     (e: "select-room-category", roomCategory: RoomCategory): void;
 }>();
 
+const favoriteRooms = useFavoriteRooms();
+
 const filteredRooms = computed(() => props.rooms
     .filter(room => room.name && room.name.toUpperCase().includes(
         props.prompt.trim().toUpperCase()
     ))
-    .sort()
+    .sort((a, b) => {
+        const aIsFavorite = favoriteRooms.isFavorite(a);
+        const bIsFavorite = favoriteRooms.isFavorite(b);
+        if (aIsFavorite && !bIsFavorite) {
+            return -1;
+        } else if (bIsFavorite && !aIsFavorite) {
+            return 1;
+        }
+        if (a.name && b.name) {
+            return a.name > b.name ? 1 : -1;
+        }
+        return 0;
+    })
 );
 
 const filteredRoomCategories = computed(() => !props.showCategories ? [] : props.roomCategories
@@ -52,7 +68,13 @@ const filteredRoomCategories = computed(() => !props.showCategories ? [] : props
             v-for="room in filteredRooms"
             :key="room.id"
             @click="emit('select-room', room)"
-        >{{ room.name }}</li>
+        >
+            <template v-if="favoriteRooms.isFavorite(room)">
+                <StarIcon :fill="true" />
+                <span class="me-2"></span>
+            </template>
+            <span>{{ room.name }}</span>
+        </li>
     </ul>
 </template>
 

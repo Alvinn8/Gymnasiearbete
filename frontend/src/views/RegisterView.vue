@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { apiGet, apiPost, errorHandler, handleError } from "@/api/api";
 import Swal from "sweetalert2";
 import router from "@/router";
-import { getSuccessfulLoginPage } from "@/api/auth";
+import { getSuccessfulLoginPage } from "@/stores/auth";
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -46,6 +46,11 @@ async function submit() {
 async function registerWithGoogle() {
     const result = await apiGet("register/google").catch(handleError);
     localStorage.setItem("mapmaker.ouath_token", result.state);
+    const url = new URL(location.href);
+    const returnUrl = url.searchParams.get("returnUrl");
+    if (returnUrl) {
+        localStorage.setItem("mapmaker.ouath_register_return_url", returnUrl);
+    }
     location.href = result.redirect_url;
 }
 
@@ -53,8 +58,7 @@ async function registerWithGoogle() {
 
 <template>
     <div class="container">
-        <h1>Skapa konto som kartskapare</h1>
-        <p>Som kartskapare kan du skapa och redigera kartor.</p>
+        <h1>Skapa konto</h1>
         <div class="mb-3">
             <button class="btn btn-primary" @click="registerWithGoogle">Skapa konto med Google</button>
         </div>

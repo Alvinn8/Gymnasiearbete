@@ -2,6 +2,7 @@ import json
 import urllib.parse
 import requests
 import base64
+import os
 
 AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://www.googleapis.com/oauth2/v4/token"
@@ -9,6 +10,14 @@ USER_INFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 # Read the oauth data from the json file from Google
 def load_data():
+    if not os.path.exists("oauth_google.json"):
+        print()
+        print("There is no oauth_google.json present in the backend folder.")
+        print("Please place the file there. It can be downloaded from the")
+        print("Google Developer Portal. If you are not the developer of the website")
+        print("ask the developer for the json file.")
+        print()
+        exit(1)
     with open("oauth_google.json", "r") as file:
         string = file.read()
         return json.loads(string)
@@ -49,6 +58,7 @@ def verify_google_token(code):
         }, None, None)
     id_token = result["id_token"]
     data_string = id_token.split(".")[1]
+    data_string += "==" # Avoid "Incorrect padding" errors
     data_string = base64.b64decode(data_string)
     data = json.loads(data_string)
     google_account_id = data["sub"]

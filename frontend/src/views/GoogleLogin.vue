@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { apiPost, errorHandler } from "@/api/api";
-import { getSuccessfulLoginPage } from "@/api/auth";
 import router from "@/router";
-import { useAuth } from "@/stores/auth";
+import { useAuth, getSuccessfulLoginPage } from "@/stores/auth";
 import Swal from "sweetalert2";
 import { onMounted, ref } from "vue";
 
@@ -38,7 +37,9 @@ onMounted(async () => {
         const auth = useAuth();
         auth.authToken = token;
         await auth.validateAuthToken();
-        router.push(getSuccessfulLoginPage());
+        const returnUrl = localStorage.getItem("mapmaker.ouath_register_return_url");
+        localStorage.removeItem("mapmaker.ouath_register_return_url");
+        router.push(getSuccessfulLoginPage(returnUrl));
     }
 });
 </script>

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { apiGet, apiPost, errorHandler, handleError } from "@/api/api";
-import { getSuccessfulLoginPage } from "@/api/auth";
 import Swal from "sweetalert2";
 import router from "@/router";
-import { useAuth } from "@/stores/auth";
+import { useAuth, getSuccessfulLoginPage } from "@/stores/auth";
 
 const username = ref<string>("");
 const password = ref<string>("");
@@ -47,7 +46,7 @@ async function loginWithGoogle() {
 
 <template>
     <div class="container">
-        <h1>Logga in som kartskapare</h1>
+        <h1>Logga in</h1>
         <div class="mb-3">
             <button class="btn btn-primary" @click="loginWithGoogle">Logga in med Google</button>
         </div>

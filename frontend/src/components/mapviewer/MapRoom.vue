@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFavoriteRooms } from "@/stores/favoriteRooms";
 import { useHighlightedRoomCategory } from "@/stores/highlight";
 import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
@@ -15,10 +16,10 @@ const props = defineProps<{
     counterRotationDeg: number;
 }>();
 
-const hovered = ref(false);
+const isHovered = ref(false);
 const selection = useSelection("room", toRef(props, "id"));
 const highlightedRoomCategory = useHighlightedRoomCategory();
-const highlighted = computed(() =>
+const isHighlighted = computed(() =>
     highlightedRoomCategory.roomCategoryId !== null && highlightedRoomCategory.roomCategoryId === props.categoryId
 );
 
@@ -72,11 +73,11 @@ onMounted(() => {
         ref="divRef"
         :class="{
             selected: selection.selected.value,
-            hovered: hovered,
-            highlighted: highlighted
+            hovered: isHovered,
+            highlighted: isHighlighted
         }"
-        @mouseover="() => hovered = true"
-        @mouseout="() => hovered = false"
+        @mouseover="() => isHovered = true"
+        @mouseout="() => isHovered = false"
         @click="selection.select()"
         @touchend="selection.select()"
     >

@@ -6,12 +6,21 @@ import { RouterLink } from "vue-router";
 const auth = useAuth();
 
 function logOut() {
-    const auth = useAuth();
     auth.authToken = null;
     router.push({
         name: "login"
     });
 }
+
+function getRegisterUrl() {
+    let url = "/register";
+    const returnUrl = router.currentRoute.value.query.returnUrl;
+    if (typeof returnUrl === "string") {
+        url += "?returnUrl=" + encodeURIComponent(returnUrl);
+    }
+    return url;
+}
+
 </script>
 
 <template>
@@ -30,7 +39,7 @@ function logOut() {
                         <RouterLink to="/test" class="nav-link" active-class="active">Test</RouterLink>
                     </li>
                     <li class="nav-item" v-if="!auth.isLoggedIn">
-                        <RouterLink to="/register" class="nav-link" active-class="active">Skapa konto</RouterLink>
+                        <RouterLink :to="getRegisterUrl()" class="nav-link" active-class="active">Skapa konto</RouterLink>
                     </li>
                     <li class="nav-item" v-if="!auth.isLoggedIn">
                         <RouterLink to="/login" class="nav-link" active-class="active">Logga in</RouterLink>

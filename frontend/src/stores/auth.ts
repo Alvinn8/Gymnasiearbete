@@ -6,7 +6,8 @@ const ITEM_KEY = "mapmaker.auth_token";
 
 export const useAuth = defineStore("auth_token", () => {
     const authToken = ref<string | null>(localStorage.getItem(ITEM_KEY));
-    const isLoggedIn = ref(true); // TODO false
+    const isLoggedIn = ref<boolean | null>(null);
+    const promises: ((isLoggedIn: boolean) => void)[] = [];
 
     onMounted(validateAuthToken);
 
@@ -22,6 +23,27 @@ export const useAuth = defineStore("auth_token", () => {
             }
         }
     );
+
+    watch(isLoggedIn, () => {
+        if (typeof isLoggedIn.value === "boolean") {
+            for (const promiseCallback of promises) {
+                promiseCallback(isLoggedIn.value);
+            }
+        }
+    });
+
+    /**
+     * Safely check if the user is logged in or not, and wait until we know for sure
+     * before returning.
+     */
+    function checkIfLoggedIn() {
+        if (typeof isLoggedIn.value === "boolean") {
+            return Promise.resolve(isLoggedIn.value);
+        }
+        return new Promise<boolean>((resolve) => {
+            promises.push(resolve);
+        });
+    }
     
     async function validateAuthToken() {
         // Fetch the account info endpoint to check if logged in
@@ -36,5 +58,21 @@ export const useAuth = defineStore("auth_token", () => {
         }
     }
 
-    return { authToken, isLoggedIn, validateAuthToken };
+    return { authToken, isLoggedIn, validateAuthToken, checkIfLoggedIn };
 });
+
+/**
+ * Get the page the user should end up at after a successful login.
+ */
+export function getSuccessfulLoginPage(returnUrl?: string | null) {
+    const url = new URL(location.href);
+    returnUrl = returnUrl ?? url.searchParams.get("returnUrl");
+    if (typeof returnUrl !== "string") {
+        // No return url, default to maps
+        return { name: "maps" };
+    }
+    // A return url, let's redirect there
+    return {
+        path: returnUrl
+    };
+}

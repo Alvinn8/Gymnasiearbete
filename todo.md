@@ -4,6 +4,6 @@
 - [x] desktop UI
 - [ ] Import the data
 - [x] Show next closest / highlight all
-- [ ] Marking favorites on map viewer
+- [x] Marking favorites on map viewer
 - [ ] Map slug
 - [ ] Index page

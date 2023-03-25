@@ -145,7 +145,6 @@ const highlightedRoomCategory = useHighlightedRoomCategory();
 
 watch([isPathfinding, pathfindStart, pathfindCategory, pathfindExclude], async () => {
     if (isPathfinding.value === "finding_closest" && pathfindStart.value !== null && pathfindCategory.value !== null) {
-        console.log(1);
         const startPointId = pathfindStart.value.doorAtPointId;
         const roomCategory = pathfindCategory.value;
         const input = {

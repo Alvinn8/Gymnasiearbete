@@ -143,7 +143,7 @@ def map_part_brief_info(map_id, part_id):
 
     walls = db_to_json(walls_data, ["id", "x", "y", "width", "height"])
     points = db_to_json(points_data, ["id", "x", "y"])
-    rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
+    rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId", "isFavorite"])
     staircases = db_to_json(staircases_data, ["id", "mapPartId", "x", "y", "width", "height", "connectsTo", "connectsToZ", "deltaZ", "rotationDeg"])
 
     t1 = time.time()
