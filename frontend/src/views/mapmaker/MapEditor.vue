@@ -44,6 +44,7 @@ watch(
         data.name = info.data.name;
         data.public = info.data.public;
         data.mapParts = info.data.mapParts;
+        data.mapParts = data.mapParts.sort((a, b) => a.name < b.name ? -1 : 1);
         data.roomCategories = info.data.roomCategories;
     },
     { immediate: true }

@@ -421,7 +421,7 @@ async function connectStaircases(idA: number, idB: number) {
 <style scoped>
 .important-warning {
     position: fixed;
-    bottom: 10px;
+    bottom: 30px;
     left: 50%;
     transform: translate(-50%);
     border-width: 5px;

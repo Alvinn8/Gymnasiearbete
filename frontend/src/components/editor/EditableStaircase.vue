@@ -82,7 +82,12 @@ watch(selection.selected, (selected) => {
         keybindInfo.groups = [
             ...movement.description,
             keybindInfo.invert,
-            keybindInfo.faster
+            keybindInfo.faster,
+            {
+                id: "rotate",
+                keys: ["r"],
+                description: "Rotera"
+            }
         ];
     }
 });
@@ -122,7 +127,7 @@ function mouseDown(e: MouseEvent) {
 div {
     --rotation-deg: 0deg;
     /** Repeating lines */
-    background: repeating-linear-gradient(var(--rotation-deg), white, white 8px, black 8px, black 10px);
+    background: repeating-linear-gradient(var(--rotation-deg), white, white 4px, black 4px, black 6px);
     position: absolute;
     z-index: 2;
     border: 1px solid black;

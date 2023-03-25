@@ -2,7 +2,7 @@ from flask import request
 from my_server import app
 from my_server.auth import map_access_required, map_part_required, map_view_access
 from my_server.database_handler import create_connection, db_to_json
-
+import time
 
 @app.route("/api/map/<map_id>/part/new", methods=["POST"])
 @map_access_required
@@ -103,6 +103,8 @@ def map_part_info(jwt, map_id, part_id):
 @map_view_access
 def map_part_brief_info(map_id, part_id):
 
+    t0 = time.time()
+
     conn = create_connection()
     cur = conn.cursor()
 
@@ -131,8 +133,8 @@ def map_part_brief_info(map_id, part_id):
     staircases_data = cur.execute(
         """SELECT Staircase.id, Staircase.map_part_id, Staircase.x, Staircase.y, Staircase.width, Staircase.height, Staircase.connects_to, ConnectedMapPart.z, ConnectedMapPart.z - MapPart.z, Staircase.rotation_deg FROM Staircase
             JOIN MapPart ON MapPart.id = Staircase.map_part_id
-            JOIN Staircase AS ConnectedStaircase ON Staircase.connects_to = ConnectedStaircase.id
-            JOIN MapPart AS ConnectedMapPart ON ConnectedStaircase.map_part_id = ConnectedMapPart.id
+            LEFT JOIN Staircase AS ConnectedStaircase ON Staircase.connects_to = ConnectedStaircase.id
+            LEFT JOIN MapPart AS ConnectedMapPart ON ConnectedStaircase.map_part_id = ConnectedMapPart.id
             WHERE Staircase.map_part_id = ?
         """, (part_id,)
     ).fetchall()
@@ -143,6 +145,10 @@ def map_part_brief_info(map_id, part_id):
     points = db_to_json(points_data, ["id", "x", "y"])
     rooms = db_to_json(rooms_data, ["id", "doorAtPointId", "name", "x", "y", "width", "height", "categoryId"])
     staircases = db_to_json(staircases_data, ["id", "mapPartId", "x", "y", "width", "height", "connectsTo", "connectsToZ", "deltaZ", "rotationDeg"])
+
+    t1 = time.time()
+
+    print(f"brief_info took {(t1 - t0):.3f} seconds")
 
     return {
         "success": True,

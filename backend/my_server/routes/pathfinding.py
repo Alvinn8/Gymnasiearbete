@@ -19,8 +19,9 @@ def find_closest():
     data = request.get_json()
     start_point_id = data["startPointId"]
     end_category_id = data["endCategoryId"]
+    exclude_room_ids = data["excludeRoomIds"]
 
-    path_point_ids = pathfinding.dijkstra_find_closest(start_point_id, end_category_id)
+    path_point_ids = pathfinding.dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids)
 
     return handle_path_point_ids(path_point_ids)
 

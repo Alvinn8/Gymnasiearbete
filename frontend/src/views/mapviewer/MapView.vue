@@ -13,6 +13,7 @@ import { useSelection } from "@/stores/selection";
 import MobilePanel from "@/components/MobilePanel.vue";
 import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
 import PointConnection from "@/components/editor/PointConnection.vue";
+import { useHighlightedRoomCategory } from "@/stores/highlight";
 
 interface Data {
     name: string;
@@ -105,6 +106,7 @@ const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
 const pathfindStart = ref<RoomWithZ | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
 const pathfindCategory = ref<RoomCategory | null>(null);
+const pathfindExclude = ref<number[]>([]);
 const pathfindConnections = computed(() => {
     if (!pathfindPath.value) return null;
     const array: [PointWithZ, PointWithZ][] = [];
@@ -125,7 +127,6 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
         const endPointId = selectedRoom.value.doorAtPointId;
         const startPointId = pathfindStart.value.doorAtPointId;
 
-        console.log(selectedRoom.value, pathfindStart.value);
         const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
             .catch(errorHandler([
                 [(json: any) => !json.success, () => Swal.fire({
@@ -140,13 +141,17 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
     }
 });
 
-watch([isPathfinding, pathfindStart, pathfindCategory], async () => {
+const highlightedRoomCategory = useHighlightedRoomCategory();
+
+watch([isPathfinding, pathfindStart, pathfindCategory, pathfindExclude], async () => {
     if (isPathfinding.value === "finding_closest" && pathfindStart.value !== null && pathfindCategory.value !== null) {
+        console.log(1);
         const startPointId = pathfindStart.value.doorAtPointId;
         const roomCategory = pathfindCategory.value;
         const input = {
             startPointId,
-            endCategoryId: roomCategory.id
+            endCategoryId: roomCategory.id,
+            excludeRoomIds: pathfindExclude.value
         };
         const res = await apiPost("map/pathfinding/find_closest", input)
             .catch(errorHandler([
@@ -178,7 +183,19 @@ watch([isPathfinding, pathfindStart, pathfindCategory], async () => {
     }
 });
 
+watch([isPathfinding, pathfindCategory], () => {
+    if (isPathfinding.value === "finding_closest" && pathfindCategory.value && highlightedRoomCategory.roomCategoryId !== pathfindCategory.value.id) {
+        // Highlight all rooms in the category
+        highlightedRoomCategory.roomCategoryId = pathfindCategory.value.id;
+    }
+    if (isPathfinding.value !== "finding_closest" && highlightedRoomCategory.roomCategoryId !== null) {
+        // Stop highlighting if we are not finding the closest
+        highlightedRoomCategory.roomCategoryId = null;
+    }
+});
+
 async function findClosest(roomCategory: RoomCategory) {
+    pathfindExclude.value = [];
     roomSelection.deselect();
     isPathfinding.value = "finding_closest";
     pathfindCategory.value = roomCategory;
@@ -196,6 +213,27 @@ async function findClosest(roomCategory: RoomCategory) {
     } else {
         showSearchSuggestions.value = false;
     }
+}
+
+async function findNextClosest() {
+    if (!selectedRoom.value) return;
+    
+    // Exclude the current room
+    pathfindExclude.value = [...pathfindExclude.value, selectedRoom.value.id];
+    
+    // And search again (watch will trigger)
+}
+
+async function findNextClosestFromHere() {
+    if (!selectedRoom.value) return;
+    
+    // Exclude the current room
+    pathfindExclude.value = [...pathfindExclude.value, selectedRoom.value.id];
+    
+    // Set the current room as the start
+    pathfindStart.value = selectedRoom.value;
+
+    // And search again (watch will trigger)
 }
 
 function pathfindStartInputClick() {
@@ -283,7 +321,15 @@ function formatRoomName(room: RoomWithZ | null) {
                 <div
                     v-if="isPathfinding === 'finding_closest'"
                     class="closest-box"
-                ><strong>Till: </strong>Närmaste {{ pathfindCategory?.name }}</div>
+                >
+                    <div class="mb-2">
+                        <span><strong>Till: </strong>Närmaste {{ pathfindCategory?.name }}</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary mx-1" @click="findNextClosest">Nästa</button>
+                        <button class="btn btn-primary mx-1" @click="findNextClosestFromHere">Nästa härifrån</button>
+                    </div>
+                </div>
             </template>
             <template v-else>
                 <SearchBar

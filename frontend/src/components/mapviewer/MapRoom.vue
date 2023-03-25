@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useHighlightedRoomCategory } from "@/stores/highlight";
 import { usePanzoom } from "@/stores/panzoom";
 import { useSelection } from "@/stores/selection";
-import { onMounted, ref, toRef, watch } from "vue";
+import { computed, onMounted, ref, toRef, watch } from "vue";
 
 const props = defineProps<{
     id: number;
@@ -10,11 +11,16 @@ const props = defineProps<{
     y: number;
     width: number;
     height: number;
+    categoryId: number | null;
     counterRotationDeg: number;
 }>();
 
 const hovered = ref(false);
 const selection = useSelection("room", toRef(props, "id"));
+const highlightedRoomCategory = useHighlightedRoomCategory();
+const highlighted = computed(() =>
+    highlightedRoomCategory.roomCategoryId !== null && highlightedRoomCategory.roomCategoryId === props.categoryId
+);
 
 const divRef = ref<HTMLDivElement | null>(null);
 const spanRef = ref<HTMLSpanElement | null>(null);
@@ -41,9 +47,12 @@ onMounted(() => {
     let spanBox = spanRef.value.getBoundingClientRect();
 
     let fontSize = 25;
-    while (spanBox.width > divBox.width || spanBox.height > divBox.height) {
+    while ((spanBox.width > divBox.width || spanBox.height > divBox.height) && fontSize > 1) {
         // The text is too big, we need to make it smaller.
         fontSize -= 5;
+        if (fontSize <= 0) {
+            fontSize = 1;
+        }
         spanRef.value.style.fontSize = fontSize + "px";
         if (fontSize <= 10) {
             spanRef.value.style.padding = "1px";
@@ -61,7 +70,11 @@ onMounted(() => {
                   width: ${width}px;
                   height: ${height}px;`"
         ref="divRef"
-        :class="{ selected: selection.selected.value, hovered: hovered }"
+        :class="{
+            selected: selection.selected.value,
+            hovered: hovered,
+            highlighted: highlighted
+        }"
         @mouseover="() => hovered = true"
         @mouseout="() => hovered = false"
         @click="selection.select()"
@@ -93,8 +106,11 @@ span {
     border-radius: 5px;
     font-size: 25px;
 }
-.hover {
+.hovered {
     background-color: rgba(0, 0, 0, 0.3);
+}
+.highlighted {
+    background-color: rgba(0, 255, 0, 0.1);
 }
 .selected {
     background-color: rgba(0, 255, 0, 0.3);

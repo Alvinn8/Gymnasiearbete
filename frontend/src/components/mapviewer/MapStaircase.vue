@@ -11,8 +11,8 @@ const props = defineProps<{
     height: number;
     z: number;
     connectsTo: number | null;
-    connectsToZ: number;
-    deltaZ: number;
+    connectsToZ: number | null;
+    deltaZ: number | null;
     rotationDeg: number;
 }>();
 
@@ -37,9 +37,7 @@ watch([selection.selected, panzoom, divRef], () => {
         const newX = window.innerWidth / 2 - (x + width / 2) * transform.scale;
         const newY = window.innerHeight / 2 - (y + height / 2) * transform.scale;
         panzoom.value.smoothMoveTo(newX, newY);
-        setTimeout(() => {
-            flash.value = true;
-        }, 1000);
+        flash.value = true;
     }
 }, { immediate: true });
 
@@ -47,14 +45,14 @@ watch(flash, () => {
     if (flash.value) {
         setTimeout(() => {
             flash.value = false;
-        }, 1000);
+        }, 4000);
     }
 });
 
 function click() {
     if (!props.connectsTo) return;
     staircaseSelection.select(props.connectsTo);
-    emit("change-floor", props.connectsToZ);
+    emit("change-floor", props.connectsToZ!);
 }
 
 </script>
@@ -64,8 +62,7 @@ function click() {
             left: x + 'px',
             top: y + 'px',
             width: width + 'px',
-            height: height + 'px',
-            transform: `rotate(${rotationDeg}deg)`
+            height: height + 'px'
         }"
         :class="{
             flash: flash,
@@ -75,8 +72,8 @@ function click() {
         @click="click"
         @touchend="click"
     >
-        <span v-if="deltaZ > 0">UPP</span>
-        <span v-if="deltaZ < 0">NED</span>
+        <span v-if="deltaZ && deltaZ > 0">UPP</span>
+        <span v-if="deltaZ && deltaZ < 0">NED</span>
     </div>
 </template>
 
@@ -84,7 +81,7 @@ function click() {
 div {
     --rotation-deg: 0deg;
     /** Repeating lines */
-    background: repeating-linear-gradient(var(--rotation-deg), white, white 8px, black 8px, black 10px);
+    background: repeating-linear-gradient(var(--rotation-deg), white, white 4px, black 4px, black 6px);
     position: absolute;
     z-index: 2;
     border: 1px solid black;
@@ -120,7 +117,7 @@ span {
     font-size: 10px;
 }
 .flash {
-    animation: flash 1s;
+    animation: flash 750ms 4;
 }
 @keyframes flash {
     50% {

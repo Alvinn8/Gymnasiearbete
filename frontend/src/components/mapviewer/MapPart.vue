@@ -75,6 +75,7 @@ watch(
             :width="room.width"
             :height="room.height"
             :counter-rotation-deg="-rotationDeg"
+            :category-id="room.categoryId ?? null"
         />
 
         <MapStaircase

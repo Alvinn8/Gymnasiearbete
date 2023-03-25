@@ -106,6 +106,6 @@ export type Staircase = Dimensions & {
 
 export type StaircaseWithZ = Staircase & {
     /** The z of the map part that the staircase connects to. */
-    connectsToZ: number;
-    deltaZ: number;
+    connectsToZ: number | null;
+    deltaZ: number | null;
 };

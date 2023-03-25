@@ -154,7 +154,7 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
     conn.close()
     return None
 
-def dijkstra_find_closest(start_point_id, end_category_id):
+def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
     # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Pseudocode
 
     t0 = time.time()
@@ -181,12 +181,13 @@ def dijkstra_find_closest(start_point_id, end_category_id):
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, distances)
 
-        category_id = cur.execute(
-            "SELECT category_id FROM Room WHERE door_at_point_id = ?",
+        result = cur.execute(
+            "SELECT category_id, Room.id FROM Room WHERE door_at_point_id = ?",
             (current_point_id,)
         ).fetchone()
+        category_id, room_id = result if not result is None else (None, None)
 
-        if not category_id is None and category_id[0] == end_category_id:
+        if not result is None and category_id == end_category_id and room_id not in exclude_room_ids:
             # We found a destination Let's reconstruct the path we took and return that.
             t1 = time.time()
             print("Pathfinding (find closest):")
