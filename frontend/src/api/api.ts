@@ -7,7 +7,14 @@ import { useAuth } from "@/stores/auth";
 export const API_BASE = getApiBase();
 
 function getApiBase() {
-    return `http://${location.hostname}:8080/api/`;
+    if (location.port) {
+        // A custom port means local development
+        return `http://${location.hostname}:8080/api/`;
+    } else {
+        // Production. The frontend is served from the same
+        // server. Api is on another path.
+        return `${location.protocol}${location.hostname}/api/`;
+    }
 }
 
 /**

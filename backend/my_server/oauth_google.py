@@ -1,3 +1,4 @@
+from my_server import is_production
 import json
 import urllib.parse
 import requests
@@ -7,6 +8,16 @@ import os
 AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://www.googleapis.com/oauth2/v4/token"
 USER_INFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+def get_callback_url():
+    if not is_production:
+        return "http://localhost:5173/login/google/callback"
+    
+    with open("production.txt") as file:
+        productionHost = file.readline().strip()
+        return f"https://{productionHost}/login/google/callback"
+
+CALLBACK_URL = get_callback_url()
 
 # Read the oauth data from the json file from Google
 def load_data():
@@ -36,7 +47,7 @@ def create_authorize_url(state):
     params = urllib.parse.urlencode({
         "response_type": "code",
         "client_id": get_google_client_id(),
-        "redirect_uri": "http://localhost:5173/login/google/callback",
+        "redirect_uri": CALLBACK_URL,
         "scope": "openid email",
         "state": state
     })
@@ -47,7 +58,7 @@ def verify_google_token(code):
         "grant_type": "authorization_code",
         "client_id": get_google_client_id(),
         "client_secret": get_google_client_secret(),
-        "redirect_uri": "http://localhost:5173/login/google/callback",
+        "redirect_uri": CALLBACK_URL,
         "code": code
     }
     result = requests.post(TOKEN_URL, data=params).json()
