@@ -5,7 +5,7 @@ import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
 import type { MapPart as MapPartType, PointWithZ, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import SearchBar from "@/components/mapviewer/SearchBar.vue";
 import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
@@ -14,6 +14,8 @@ import MobilePanel from "@/components/MobilePanel.vue";
 import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
 import PointConnection from "@/components/editor/PointConnection.vue";
 import { useHighlightedRoomCategory } from "@/stores/highlight";
+import { useKeybindInfo } from "@/stores/keybindsInfo";
+import PathfindingPoint from "@/components/mapviewer/PathfindingPoint.vue";
 
 interface Data {
     name: string;
@@ -105,6 +107,7 @@ const isHighestFloor = computed(() => {
 const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
 const pathfindStart = ref<RoomWithZ | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
+const pathfindSteps = ref<PointWithZ[] | null>(null);
 const pathfindCategory = ref<RoomCategory | null>(null);
 const pathfindExclude = ref<number[]>([]);
 const pathfindConnections = computed(() => {
@@ -138,6 +141,7 @@ watch([isPathfinding, pathfindStart, selectedRoom], async () => {
         if (!res) return;
 
         pathfindPath.value = res.path;
+        pathfindSteps.value = res.steps;
     }
 });
 
@@ -163,6 +167,7 @@ watch([isPathfinding, pathfindStart, pathfindCategory, pathfindExclude], async (
         if (!res) return;
 
         pathfindPath.value = res.path as PointWithZ[];
+        pathfindSteps.value = res.steps;
 
         // Get the end point
         const endPointId = pathfindPath.value[pathfindPath.value.length - 1].id;
@@ -272,6 +277,32 @@ function formatRoomName(room: RoomWithZ | null) {
     return `${roomCategory.name} (specifik)`;
 }
 
+const showPathfindSteps = ref<boolean>(false);
+const pathfindStepCount = ref(0);
+const pathfindStepPoints = computed(() => {
+    if (!showPathfindSteps.value || !pathfindSteps.value) return [];
+    return pathfindSteps.value.slice(0, pathfindStepCount.value).filter(point => point.z === floor.value);
+});
+
+function keyPress(e: KeyboardEvent) {
+    console.log(e.key);
+    if (e.key === "s") {
+        showPathfindSteps.value = !showPathfindSteps.value;
+        pathfindStepCount.value = 2;
+    } else if (e.key === "e") {
+        pathfindStepCount.value++;
+    } else if (e.key === "d") {
+        pathfindStepCount.value--;
+    }
+}
+
+onMounted(() => {
+    document.body.addEventListener("keypress", keyPress);
+});
+onUnmounted(() => {
+    document.body.removeEventListener("keypress", keyPress);
+});
+
 </script>
 
 <template>
@@ -295,6 +326,15 @@ function formatRoomName(room: RoomWithZ | null) {
                     :key="pointA.id"
                     :point_a="pointA"
                     :point_b="pointB"
+                />
+            </template>
+
+            <template v-if="showPathfindSteps">
+                <PathfindingPoint
+                    v-for="point in pathfindStepPoints"
+                    :key="point.id"
+                    :x="point.x"
+                    :y="point.y"
                 />
             </template>
         </PanZoom>

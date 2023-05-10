@@ -72,9 +72,15 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
 
     neighbor_loop_iterations = 0
 
+    steps = []
+
     # While the open set isn't empty
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, f_score)
+
+        steps.append({
+            "id": current_point_id
+        })
 
         if current_point_id == end_point_id:
             # We found the end! Let's reconstruct the path we took and return that.
@@ -85,7 +91,7 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
             print(f"\t Neighbor loop iterations: {neighbor_loop_iterations}")
             print("</>")
             conn.close()
-            return reconstruct_path(previous, current_point_id)
+            return reconstruct_path(previous, current_point_id), steps
 
         open_set.remove(current_point_id)
 
@@ -152,7 +158,7 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
                 open_set.add(neighbor_point_id)
 
     conn.close()
-    return None
+    return None, None
 
 def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
     # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Pseudocode
@@ -178,8 +184,14 @@ def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
     database_access_count = 0
     neighbor_loop_iterations = 0
 
+    steps = []
+
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, distances)
+
+        steps.append({
+            "id": current_point_id
+        })
 
         result = cur.execute(
             "SELECT category_id, Room.id FROM Room WHERE door_at_point_id = ?",
@@ -196,7 +208,7 @@ def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
             print(f"\t Neighbor loop iterations: {neighbor_loop_iterations}")
             print("</>")
             conn.close()
-            return reconstruct_path(previous, current_point_id)
+            return reconstruct_path(previous, current_point_id), steps
         
         already_explored.add(current_point_id)
         open_set.remove(current_point_id)
