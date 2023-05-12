@@ -107,7 +107,7 @@ const isHighestFloor = computed(() => {
 const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
 const pathfindStart = ref<RoomWithZ | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
-const pathfindSteps = ref<PointWithZ[] | null>(null);
+const pathfindSteps = ref<(PointWithZ & { connections: PointWithZ[] })[] | null>(null);
 const pathfindCategory = ref<RoomCategory | null>(null);
 const pathfindExclude = ref<number[]>([]);
 const pathfindConnections = computed(() => {
@@ -283,6 +283,33 @@ const pathfindStepPoints = computed(() => {
     if (!showPathfindSteps.value || !pathfindSteps.value) return [];
     return pathfindSteps.value.slice(0, pathfindStepCount.value).filter(point => point.z === floor.value);
 });
+const pathfindNeighborPoints = computed(() => {
+    if (!showPathfindSteps.value || !pathfindSteps.value) return [];
+    const stepPoints = new Set<number>();
+    const nPoints = new Set<number>();
+    const nMap = new Map<number, PointWithZ>();
+    pathfindStepPoints.value.forEach(point => stepPoints.add(point.id));
+    pathfindStepPoints.value.forEach(a => a.connections.forEach(c => {
+        nPoints.add(c.id);
+        nMap.set(c.id, c);
+    }));
+    stepPoints.forEach(id => nPoints.delete(id));
+
+    return [...nPoints.values()].map(id => nMap.get(id)!);
+});
+const pathfindNeighborConnections = computed(() => {
+    if (!showPathfindSteps.value || !pathfindSteps.value) return [];
+
+    const p = pathfindStepPoints.value[pathfindStepPoints.value.length - 1];
+    if (!p) return;
+
+    const ret: [PointWithZ, PointWithZ][] = [];
+    for (const conn of p.connections) {
+        ret.push([p, conn]);
+    }
+
+    return ret;
+});
 
 function keyPress(e: KeyboardEvent) {
     console.log(e.key);
@@ -335,6 +362,20 @@ onUnmounted(() => {
                     :key="point.id"
                     :x="point.x"
                     :y="point.y"
+                />
+                <PathfindingPoint
+                    v-for="point in pathfindNeighborPoints"
+                    :key="point.id"
+                    :x="point.x"
+                    :y="point.y"
+                    :color="'orange'"
+                />
+                <PointConnection
+                    v-for="[pointA, pointB] in pathfindNeighborConnections"
+                    :key="pointA.id + ' ' + pointB.id"
+                    :point_a="pointA"
+                    :point_b="pointB"
+                    :color="'orange'"
                 />
             </template>
         </PanZoom>

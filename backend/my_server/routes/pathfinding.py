@@ -35,6 +35,9 @@ def handle_path_point_ids(path_point_ids, steps):
     all_point_ids.extend(path_point_ids)
     for step in steps:
         all_point_ids.append(step["id"])
+        for connection in step["connections"]:
+            if not connection["id"] in all_point_ids:
+                all_point_ids.append(connection["id"])
     
     conn = create_connection()
     cur = conn.cursor()
@@ -90,7 +93,13 @@ def handle_path_point_ids(path_point_ids, steps):
     json_steps = []
 
     for step in steps:
-        json_steps.append(get_point(step["id"]))
+        point = get_point(step["id"]).copy()
+        point["connections"] = []
+        for connection in step["connections"]:
+            conn = get_point(connection["id"]).copy()
+            point["connections"].append(conn)
+
+        json_steps.append(point)
 
     return {
         "success": True,

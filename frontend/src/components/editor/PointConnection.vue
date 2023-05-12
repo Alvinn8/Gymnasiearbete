@@ -5,7 +5,8 @@ import { computed } from "vue";
 
 const props = defineProps<{
     point_a: Position,
-    point_b: Position
+    point_b: Position,
+    color?: string;
 }>();
 
 const distance = computed(() => 
@@ -29,7 +30,8 @@ const angle = computed(() =>
     <div :style="`left: ${point_a.x}px;
                  top: ${point_a.y}px;
                  width: ${distance}px;
-                 transform: translate(0px, -1px) rotate(${angle}rad);`"></div>
+                 transform: translate(0px, -1px) rotate(${angle}rad);`
+                 + (color ? ('background-color: ' + color + ';') : '')"></div>
 </template>
 
 <style scoped>

@@ -78,9 +78,10 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, f_score)
 
-        steps.append({
-            "id": current_point_id
-        })
+        step = {
+            "id": current_point_id,
+            "connections": []
+        }
 
         if current_point_id == end_point_id:
             # We found the end! Let's reconstruct the path we took and return that.
@@ -157,6 +158,11 @@ def a_star_find_shortest_path(start_point_id, end_point_id):
                 # (f_score) will be chosen for the next iteration.
                 open_set.add(neighbor_point_id)
 
+                step["connections"].append({
+                    "id": neighbor_point_id
+                })
+        steps.append(step)
+
     conn.close()
     return None, None
 
@@ -189,9 +195,11 @@ def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
     while len(open_set) > 0:
         current_point_id = get_next_point(open_set, distances)
 
-        steps.append({
-            "id": current_point_id
-        })
+        step = {
+            "id": current_point_id,
+            "connections": []
+        }
+        steps.append(step)
 
         result = cur.execute(
             "SELECT category_id, Room.id FROM Room WHERE door_at_point_id = ?",
@@ -237,6 +245,9 @@ def dijkstra_find_closest(start_point_id, end_category_id, exclude_room_ids):
 
             already_explored.add(neighbor_point_id)
             open_set.add(neighbor_point_id)
+            step["connections"].append({
+                "id": neighbor_point_id
+            })
 
             neighbor_loop_iterations += 1
 
