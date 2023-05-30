@@ -3,10 +3,10 @@ import { apiGet, apiPost, errorHandler } from "@/api/api";
 import MapPart from "@/components/mapviewer/MapPart.vue";
 import PanZoom from "@/components/PanZoom.vue";
 import { useAuth } from "@/stores/auth";
-import type { MapPart as MapPartType, PointWithZ, RoomCategory, RoomWithZ } from "@/types";
+import type { MapPart as MapPartType, PointWithZ, Room, RoomCategory, RoomWithZ } from "@/types";
 import Swal from "sweetalert2";
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, type LocationQueryValue, type LocationQuery } from "vue-router";
 import SearchBar from "@/components/mapviewer/SearchBar.vue";
 import SearchSuggestions from "@/components/mapviewer/SearchSuggestions.vue";
 import { useSelection } from "@/stores/selection";
@@ -14,6 +14,7 @@ import MobilePanel from "@/components/MobilePanel.vue";
 import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
 import PointConnection from "@/components/editor/PointConnection.vue";
 import { useHighlightedRoomCategory } from "@/stores/highlight";
+import router from "@/router";
 
 interface Data {
     name: string;
@@ -76,7 +77,7 @@ function selectRoomFromSuggestion(room: RoomWithZ) {
         selectRoomCallback.value = null;
         return;
     }
-    searchPrompt.value = room.name ?? "";
+    searchPrompt.value = "";
     roomSelection.select(room.id);
     
     // Change to the floor the room is at
@@ -104,6 +105,7 @@ const isHighestFloor = computed(() => {
 
 const isPathfinding = ref<false | "pathfinding" | "finding_closest">(false);
 const pathfindStart = ref<RoomWithZ | null>(null);
+const pathfindEnd = ref<RoomWithZ | null>(null);
 const pathfindPath = ref<PointWithZ[] | null>(null);
 const pathfindCategory = ref<RoomCategory | null>(null);
 const pathfindExclude = ref<number[]>([]);
@@ -122,9 +124,9 @@ const pathfindConnections = computed(() => {
     return array;
 });
 
-watch([isPathfinding, pathfindStart, selectedRoom], async () => {
-    if (isPathfinding.value === "pathfinding" && pathfindStart.value !== null && selectedRoom.value !== null) {
-        const endPointId = selectedRoom.value.doorAtPointId;
+watch([isPathfinding, pathfindStart, pathfindEnd], async () => {
+    if (isPathfinding.value === "pathfinding" && pathfindStart.value !== null && pathfindEnd.value !== null) {
+        const endPointId = pathfindEnd.value.doorAtPointId;
         const startPointId = pathfindStart.value.doorAtPointId;
 
         const res = await apiPost("map/pathfinding/find_path", { startPointId, endPointId })
@@ -176,6 +178,9 @@ watch([isPathfinding, pathfindStart, pathfindCategory, pathfindExclude], async (
                 floor.value = room.z;
             }
 
+            // Assign the destination to the room
+            pathfindEnd.value = room;
+
             // Select the room
             roomSelection.select(room.id);
         }
@@ -195,6 +200,11 @@ watch([isPathfinding, pathfindCategory], () => {
 
 async function findClosest(roomCategory: RoomCategory) {
     pathfindExclude.value = [];
+    // If the user has selected a room and there is no
+    // start room, then make the selected room the start.
+    if (selectedRoom.value && (!pathfindStart.value || isPathfinding.value !== "finding_closest")) {
+        pathfindStart.value = selectedRoom.value;
+    }
     roomSelection.deselect();
     isPathfinding.value = "finding_closest";
     pathfindCategory.value = roomCategory;
@@ -215,22 +225,22 @@ async function findClosest(roomCategory: RoomCategory) {
 }
 
 async function findNextClosest() {
-    if (!selectedRoom.value) return;
+    if (!pathfindEnd.value) return;
     
     // Exclude the current room
-    pathfindExclude.value = [...pathfindExclude.value, selectedRoom.value.id];
+    pathfindExclude.value = [...pathfindExclude.value, pathfindEnd.value.id];
     
     // And search again (watch will trigger)
 }
 
 async function findNextClosestFromHere() {
-    if (!selectedRoom.value) return;
+    if (!pathfindEnd.value) return;
     
     // Exclude the current room
-    pathfindExclude.value = [...pathfindExclude.value, selectedRoom.value.id];
+    pathfindExclude.value = [...pathfindExclude.value, pathfindEnd.value.id];
     
     // Set the current room as the start
-    pathfindStart.value = selectedRoom.value;
+    pathfindStart.value = pathfindEnd.value;
 
     // And search again (watch will trigger)
 }
@@ -251,7 +261,7 @@ function pathfindEndInputClick() {
     selectRoomCallback.value = {
         text: "Till",
         callback: (room) => {
-            roomSelection.select(room.id);
+            pathfindEnd.value = room;
         }
     };
     showSearchSuggestions.value = true;
@@ -264,12 +274,136 @@ function stopPathfinding() {
     showSearchSuggestions.value = false;
 }
 
+function pathfindToSelectedRoom() {
+    pathfindEnd.value = selectedRoom.value;
+    isPathfinding.value = "pathfinding";
+}
+
 function formatRoomName(room: RoomWithZ | null) {
     if (!room) return "";
     if (room.name) return room.name;
     const roomCategory = data.value?.roomCategories.find(roomCategory => roomCategory.id === room.categoryId);
     if (!roomCategory) return "Rum";
     return `${roomCategory.name} (specifik)`;
+}
+
+// Query parameters from links
+watch(
+    () => [route.query, data.value],
+    () => {   
+        if (!data.value) return;
+        
+        const selectedRoom = getQueryRoom(route.query.selected);
+        if (selectedRoom) {
+            floor.value = selectedRoom.z;
+            roomSelection.select(selectedRoom.id);
+        }
+
+        const pathfindMode = route.query.mode?.toString();
+        switch (pathfindMode) {
+        case "pathfinding": isPathfinding.value = "pathfinding"; break;
+        case "finding_closest": isPathfinding.value = "finding_closest"; break;
+        }
+
+        pathfindStart.value = getQueryRoom(route.query.start);
+        pathfindEnd.value = getQueryRoom(route.query.end);
+
+        const queryCategory = route.query.category?.toString();
+        if (queryCategory) {
+            const index = queryCategory.lastIndexOf("-");
+            if (index > 0) {
+                const name = queryCategory.substring(0, index);
+                const id = parseInt(queryCategory.substring(index + 1));
+                pathfindCategory.value = data.value.roomCategories.find(c => c.id === id && c.name === name) ?? null;
+            }
+        }
+
+        if (isPathfinding.value === "pathfinding" && pathfindEnd.value) {
+            floor.value = pathfindEnd.value.z;
+            roomSelection.select(pathfindEnd.value.id);
+        }
+    },
+    { immediate: true }
+);
+
+function getQueryRoom(queryString: LocationQueryValue | LocationQueryValue[]) {
+    if (!queryString) return null;
+    queryString = queryString.toString();
+    // The query string is made up of the id and the name.
+    const index = queryString.lastIndexOf("-");
+    let id: number | null = null;
+    let name: string | null = null;
+    if (index === -1) {
+        // The room has no name and only an id.
+        id = parseInt(queryString);
+    } else {
+        name = queryString.substring(0, index);
+        id = parseInt(queryString.substring(index + 1));
+    }
+    if (id == null || isNaN(id)) {
+        return null;
+    }
+    return data.value?.rooms.find(r => r.id === id && r.name === name) ?? null;
+}
+
+function createLink() {
+    const query: LocationQuery = {};
+    let text: string;
+    const formatName = (room: Room) => (room.name ?? "rum utan namn");
+    let a = "";
+    let b = "";
+    if (selectedRoom.value && !isPathfinding.value) {
+        // Create a link where a room is selected
+        query.selected = getRoomAsQueryString(selectedRoom.value);
+        text = "Här är en länk till <span class=\"link-a\"></span>:";
+        a = formatName(selectedRoom.value);
+    }
+    else if (isPathfinding.value === "pathfinding" && pathfindStart.value && pathfindEnd.value) {
+        // Create a pathfinding link from A to B
+        query.mode = "pathfinding";
+        query.start = getRoomAsQueryString(pathfindStart.value);
+        query.end = getRoomAsQueryString(pathfindEnd.value);
+        text = "Från: <span class=\"link-a\"></span><br>" +
+            "Till: <span class=\"link-b\"></span><br>" +
+            "Länk:";
+        a = formatName(pathfindStart.value);
+        b = formatName(pathfindEnd.value);
+    }
+    else if (isPathfinding.value === "finding_closest" && pathfindStart.value && pathfindCategory.value) {
+        // Create a pathfinding link from A to closest
+        query.mode = "finding_closest";
+        query.start = getRoomAsQueryString(pathfindStart.value);
+        query.category = pathfindCategory.value.name + "-" + pathfindCategory.value.id;
+        text = "Från: <span class=\"link-a\"></span><br>" +
+            "Till närmaste <span class=\"link-b\"></span><br>" + 
+            "Länk:";
+        a = formatName(pathfindStart.value);
+        b = pathfindCategory.value.name;
+    }
+    else return;
+
+    const link = router.resolve({
+        name: "view-map",
+        query,
+        params: {
+            map_id: route.params.map_id
+        }
+    });
+    const url = new URL(link.href, location.origin);
+    Swal.fire({
+        icon: "info",
+        html: text + "<br><code class=\"link-url\" style=\"user-select: all;\"></code>",
+        didOpen(element) {
+            element.querySelector(".link-url")!.textContent = url.href;
+            element.querySelector(".link-a")!.textContent = a;
+            element.querySelector(".link-b")!.textContent = b;
+        }
+    });
+}
+
+function getRoomAsQueryString(room: Room) {
+    if (!room.name) return room.id.toString();
+    return room.name + "-" + room.id;
 }
 
 </script>
@@ -311,7 +445,7 @@ function formatRoomName(room: RoomWithZ | null) {
                 />
                 <SearchBar
                     v-if="isPathfinding === 'pathfinding'"
-                    :model-value="formatRoomName(selectedRoom)"
+                    :model-value="formatRoomName(pathfindEnd)"
                     :show-back-arrow="true"
                     prefix="Till"
                     @focus="pathfindEndInputClick"
@@ -356,7 +490,8 @@ function formatRoomName(room: RoomWithZ | null) {
                     v-if="selectedRoom && data"
                     :room="selectedRoom"
                     :room-categories="data.roomCategories"
-                    @pathfind="isPathfinding = 'pathfinding'"
+                    @pathfind="pathfindToSelectedRoom"
+                    @create-link="createLink"
                 />
             </div>
             <div class="floor-container">
@@ -371,7 +506,8 @@ function formatRoomName(room: RoomWithZ | null) {
                     <RoomInfo
                         :room="selectedRoom"
                         :room-categories="data.roomCategories"
-                        @pathfind="isPathfinding = 'pathfinding'"
+                        @pathfind="pathfindToSelectedRoom"
+                        @create-link="createLink"
                     />
                 </div>
             </MobilePanel>

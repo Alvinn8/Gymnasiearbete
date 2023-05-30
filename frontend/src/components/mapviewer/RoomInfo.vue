@@ -16,6 +16,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
     (e: "pathfind"): void;
+    (e: "create-link"): void;
 }>();
 
 const roomCategory = computed(() => props.roomCategories.find(
@@ -68,6 +69,11 @@ function redirectToLogin() {
         <div class="mb-3"></div>
         <button class="btn btn-secondary" @click="redirectToLogin">Logga in för att favoritmarkera</button>
     </template>
+    <div class="mb-3"></div>
+    <button
+        class="btn btn-secondary"
+        @click="emit('create-link')"
+    >Skapa länk</button>
 </template>
 
 <style scoped>

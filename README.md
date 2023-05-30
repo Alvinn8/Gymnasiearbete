@@ -1,6 +1,8 @@
 # Gymnasiearbete
 This is an final school project / extended essay / "Gymnasiearbete".
 
+See the `school` branch for the state of the project as it was handed in.
+
 The frontend code is made using Vue.js and built using Vite. See the frontend readme for installation and running instructions.
 
 The backend code is made using Flask. See the backend readme for installation and running instructions.
