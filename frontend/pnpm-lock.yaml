@@ -16,6 +16,7 @@ specifiers:
   npm-run-all: ^4.1.5
   panzoom: ^9.4.3
   pinia: ^2.0.28
+  qrcode.vue: ^3.4.0
   sweetalert2: ^11.7.0
   typescript: ~4.7.4
   vite: ^4.0.0
@@ -29,6 +30,7 @@ dependencies:
   bootstrap: 5.3.0-alpha1_@popperjs+core@2.11.6
   panzoom: 9.4.3
   pinia: 2.0.29_e7lp6ggkpgyi5vqd44m2kxvk6i
+  qrcode.vue: 3.4.0_vue@3.2.45
   sweetalert2: 11.7.0
   vue: 3.2.45
   vue-router: 4.1.6_vue@3.2.45
@@ -2163,6 +2165,14 @@ packages:
     resolution: {integrity: sha512-LN6QV1IJ9ZhxWTNdktaPClrNfp8xdSAYS0Zk2ddX7XsXZAxckMHPCBcHRo0cTcEIgYPRiGEkmji3Idkh2yFtYw==}
     engines: {node: '>=6'}
     dev: true
+
+  /qrcode.vue/3.4.0_vue@3.2.45:
+    resolution: {integrity: sha512-4XeImbv10Fin16Fl2DArCMhGyAdvIg2jb7vDT+hZiIAMg/6H6mz9nUZr/dR8jBcun5VzNzkiwKhiqOGbloinwA==}
+    peerDependencies:
+      vue: ^3.0.0
+    dependencies:
+      vue: 3.2.45
+    dev: false
 
   /querystringify/2.2.0:
     resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}

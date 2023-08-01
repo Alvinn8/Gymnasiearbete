@@ -15,6 +15,8 @@ import RoomInfo from "@/components/mapviewer/RoomInfo.vue";
 import PointConnection from "@/components/editor/PointConnection.vue";
 import { useHighlightedRoomCategory } from "@/stores/highlight";
 import router from "@/router";
+import type { LinkPopupData } from "./LinkPopup.vue";
+import LinkPopup from "./LinkPopup.vue";
 
 interface Data {
     name: string;
@@ -346,39 +348,38 @@ function getQueryRoom(queryString: LocationQueryValue | LocationQueryValue[]) {
     return data.value?.rooms.find(r => r.id === id && r.name === name) ?? null;
 }
 
-function createLink() {
+const linkPopup = ref<LinkPopupData | null>(null);
+
+function createLink(useQrCode: boolean) {
     const query: LocationQuery = {};
-    let text: string;
     const formatName = (room: Room) => (room.name ?? "rum utan namn");
-    let a = "";
-    let b = "";
+    const data: Partial<LinkPopupData> = {};
     if (selectedRoom.value && !isPathfinding.value) {
         // Create a link where a room is selected
         query.selected = getRoomAsQueryString(selectedRoom.value);
-        text = "Här är en länk till <span class=\"link-a\"></span>:";
-        a = formatName(selectedRoom.value);
+        data.room = {
+            name: formatName(selectedRoom.value)
+        };
     }
     else if (isPathfinding.value === "pathfinding" && pathfindStart.value && pathfindEnd.value) {
         // Create a pathfinding link from A to B
         query.mode = "pathfinding";
         query.start = getRoomAsQueryString(pathfindStart.value);
         query.end = getRoomAsQueryString(pathfindEnd.value);
-        text = "Från: <span class=\"link-a\"></span><br>" +
-            "Till: <span class=\"link-b\"></span><br>" +
-            "Länk:";
-        a = formatName(pathfindStart.value);
-        b = formatName(pathfindEnd.value);
+        data.pathfinding = {
+            from: formatName(pathfindStart.value),
+            to: formatName(pathfindEnd.value)
+        };
     }
     else if (isPathfinding.value === "finding_closest" && pathfindStart.value && pathfindCategory.value) {
         // Create a pathfinding link from A to closest
         query.mode = "finding_closest";
         query.start = getRoomAsQueryString(pathfindStart.value);
         query.category = pathfindCategory.value.name + "-" + pathfindCategory.value.id;
-        text = "Från: <span class=\"link-a\"></span><br>" +
-            "Till närmaste <span class=\"link-b\"></span><br>" + 
-            "Länk:";
-        a = formatName(pathfindStart.value);
-        b = pathfindCategory.value.name;
+        data.findingClosest = {
+            from: formatName(pathfindStart.value),
+            toCategory: pathfindCategory.value.name
+        };
     }
     else return;
 
@@ -390,15 +391,8 @@ function createLink() {
         }
     });
     const url = new URL(link.href, location.origin);
-    Swal.fire({
-        icon: "info",
-        html: text + "<br><code class=\"link-url\" style=\"user-select: all;\"></code>",
-        didOpen(element) {
-            element.querySelector(".link-url")!.textContent = url.href;
-            element.querySelector(".link-a")!.textContent = a;
-            element.querySelector(".link-b")!.textContent = b;
-        }
-    });
+    const linkUrl = url.href;
+    linkPopup.value = { ...data, useQrCode, linkUrl };
 }
 
 function getRoomAsQueryString(room: Room) {
@@ -491,7 +485,8 @@ function getRoomAsQueryString(room: Room) {
                     :room="selectedRoom"
                     :room-categories="data.roomCategories"
                     @pathfind="pathfindToSelectedRoom"
-                    @create-link="createLink"
+                    @create-link="createLink(false)"
+                    @create-qr-code="createLink(true)"
                 />
             </div>
             <div class="floor-container">
@@ -507,12 +502,14 @@ function getRoomAsQueryString(room: Room) {
                         :room="selectedRoom"
                         :room-categories="data.roomCategories"
                         @pathfind="pathfindToSelectedRoom"
-                        @create-link="createLink"
+                        @create-link="createLink(false)"
+                        @create-qr-code="createLink(true)"
                     />
                 </div>
             </MobilePanel>
         </div>
     </div>
+    <LinkPopup v-if="linkPopup" v-bind="linkPopup" @close="linkPopup = null" />
 </template>
 
 <style scoped>
