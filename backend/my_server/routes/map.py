@@ -135,7 +135,7 @@ def map_info(jwt, map_id):
             "rotationDeg": map_part_data[4],
             "z": map_part_data[5]
         })
-    
+
     room_categories = db_to_json(room_categories_data, ["id", "name"])
 
     return {
@@ -183,10 +183,12 @@ def view_map(map_id):
 
     conn.close()
 
-    map_parts = db_to_json(map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
+    map_parts = db_to_json(
+        map_parts_data, ["id", "name", "offsetX", "offsetY", "rotationDeg", "z"])
 
-    rooms = db_to_json(rooms_data, ["id", "name", "doorAtPointId", "x", "y", "width", "height", "z", "categoryId"])
-    
+    rooms = db_to_json(rooms_data, [
+                       "id", "name", "doorAtPointId", "x", "y", "width", "height", "z", "categoryId"])
+
     room_categories = db_to_json(room_categories_data, ["id", "name"])
 
     return {
@@ -247,7 +249,7 @@ def share_map(map_id):
 
 @app.route("/api/map/<map_id>/change_public_status", methods=["POST"])
 @map_access_required
-def change_public_status(map_id):
+def change_public_status(jwt, map_id):
     public = request.json["public"]
 
     conn = create_connection()
@@ -256,6 +258,27 @@ def change_public_status(map_id):
     cur.execute(
         "UPDATE Map SET public = ? WHERE id = ?",
         (public, map_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+
+@app.route("/api/map/<map_id>/rename", methods=["POST"])
+@map_access_required
+def rename_map(jwt, map_id):
+    name = request.json["name"]
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE Map SET name = ? WHERE id = ?",
+        (name, map_id)
     )
 
     conn.commit()
@@ -285,7 +308,7 @@ def get_featured_map():
             "success": True,
             "map": None
         }
-    
+
     id, name = map
 
     return {

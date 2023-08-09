@@ -120,6 +120,24 @@ function updateOffset(mapPart: MapPartType) {
     }).catch(handleError);
 }
 
+async function rename() {
+    const res = await Swal.fire({
+        title: "Ändra namn på kartan",
+        text: "Just nu heter kartan: " + data.name,
+        input: "text",
+        showCancelButton: true,
+        showLoaderOnConfirm: true,
+        preConfirm: async (name) => {
+            await apiPost(`map/${route.params.map_id}/rename`, {
+                name: name
+            }).catch(handleError);
+            return name;
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+    data.name = res.value;
+}
+
 async function share() {
     const res = await Swal.fire({
         title: "Dela karta",
@@ -171,6 +189,7 @@ async function changePublicStatus(isPublic: boolean) {
                 <h1>{{ data?.name }}</h1>
             </div>
             <div class="col">
+                <button class="btn btn-primary m-1" @click="rename">Byt namn</button>
                 <button class="btn btn-primary m-1" @click="share">Dela karta</button>
                 <button class="btn btn-warning m-1"
                     @click="() => changePublicStatus(true)"
