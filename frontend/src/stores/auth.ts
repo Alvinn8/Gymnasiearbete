@@ -46,9 +46,9 @@ export const useAuth = defineStore("auth_token", () => {
     }
     
     async function validateAuthToken() {
-        // Fetch the account info endpoint to check if logged in
+        // Ping the account endpoint to check if logged in
         try {
-            const json = await apiGet("account/info");
+            const json = await apiGet("account/ping");
             isLoggedIn.value = json.success;
         } catch (e) {
             if (!(e instanceof HttpStatusError) || e.response.status !== 401) {

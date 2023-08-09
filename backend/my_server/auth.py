@@ -42,11 +42,10 @@ def create_jwt(dictionary):
     return jwt.encode(dictionary, app.config["SECRET_KEY"], "HS256")
 
 
-def create_user_jwt(user_id, username):
+def create_user_jwt(user_id):
     return create_jwt({
         "user": {
-            "id": user_id,
-            "name": username
+            "id": user_id
         }
     })
 
@@ -58,6 +57,10 @@ def has_access_to_map(map_id, jwt, cur):
     ).fetchone()[0]
 
     return accessCount > 0
+
+
+def generate_password_hash(password):
+    return bcrypt.generate_password_hash(password)
 
 # A decorator used to denote that a route requires login and that the logged in
 # user needs to have access to the map wit the id of the map_id parameter

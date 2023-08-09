@@ -24,4 +24,4 @@ if not is_production:
     CORS(app)
 
 from my_server import error
-from my_server.routes import frontend, auth, map, map_part, wall, point, point_connection, room, room_category, pathfinding, staircase, favorite_room
+from my_server.routes import frontend, auth, map, map_part, wall, point, point_connection, room, room_category, pathfinding, staircase, favorite_room, account

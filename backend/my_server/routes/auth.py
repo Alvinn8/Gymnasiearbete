@@ -1,7 +1,7 @@
 from flask import request, abort
 from my_server import app
 from my_server.database_handler import create_connection
-from my_server.auth import bcrypt, create_user_jwt, login_required
+from my_server.auth import bcrypt, create_user_jwt, login_required, generate_password_hash
 from my_server.oauth_google import create_authorize_url, verify_google_token
 import os
 
@@ -27,7 +27,7 @@ def register():
             "error": "Användarnamnet är upptaget"
         }
 
-    hashed_password = bcrypt.generate_password_hash(password)
+    hashed_password = generate_password_hash(password)
 
     cur.execute(
         "INSERT INTO User (username, password) VALUES (?, ?)",
@@ -72,7 +72,7 @@ def login():
         }
 
     # The username and password is correct, let's generate a JWT
-    jwt = create_user_jwt(user_id, username)
+    jwt = create_user_jwt(user_id)
 
     return {
         "success": True,
@@ -136,7 +136,7 @@ def login_google_callback():
 
         user_id, username = data
 
-        jwt = create_user_jwt(user_id, username)
+        jwt = create_user_jwt(user_id)
 
         return {
             "success": True,
@@ -184,7 +184,7 @@ def login_google_callback():
         conn.commit()
         conn.close()
 
-        jwt = create_user_jwt(user_id, username)
+        jwt = create_user_jwt(user_id)
 
         return {
             "success": True,
@@ -195,10 +195,9 @@ def login_google_callback():
         abort(400)
 
 
-@app.route("/api/account/info")
+@app.route("/api/account/ping")
 @login_required
 def account_info(jwt):
     return {
         "success": True,
-        "username": jwt["user"]["name"]
     }

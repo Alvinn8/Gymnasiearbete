@@ -87,6 +87,10 @@ const router = createRouter({
             path: "/map/:map_id",
             component: () => import("../views/mapviewer/MapView.vue"),
             name: "view-map"
+        },
+        {
+            path: "/myaccount",
+            component: () => import("../views/MyAccount.vue")
         }
     ]
 });

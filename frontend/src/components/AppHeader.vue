@@ -45,6 +45,9 @@ function getRegisterUrl() {
                         <RouterLink to="/mapmaker/maps" class="nav-link" active-class="active">Mina Kartor</RouterLink>
                     </li>
                     <li class="nav-item" v-if="auth.isLoggedIn">
+                        <RouterLink to="/myaccount" class="nav-link" active-class="active">Mitt Konto</RouterLink>
+                    </li>
+                    <li class="nav-item" v-if="auth.isLoggedIn">
                         <a @click.prevent="logOut" href="#" class="nav-link">Logga ut</a>
                     </li>
                 </ul>
