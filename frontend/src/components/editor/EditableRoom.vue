@@ -3,9 +3,12 @@ import { useMovementAndResize } from "@/composables/resize";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
 import { useViewMode } from "@/stores/viewMode";
-import type { DimensionsProperty, Position } from "@/types";
-import { toRef, watch } from "vue";
+import type { Position, Room } from "@/types";
+import { inject, toRef, watch } from "vue";
 import PointConnection from "./PointConnection.vue";
+import Swal from "sweetalert2";
+import { useRoute } from "vue-router";
+import { mapPartIdKey } from "../keys";
 
 
 const props = defineProps<{
@@ -21,9 +24,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     /**
-     * Called when the wall dimensions change.
+     * Called when the room object changes.
      */
-    (e: "change", property: DimensionsProperty, value: number): void;
+    <T extends keyof Room>(e: "change", property: T, value: Room[T]): void;
     /**
      * Called when the user wishes to change the category of the room.
      */
@@ -33,6 +36,8 @@ const emit = defineEmits<{
 const selection = useSelection("room", toRef(props, "id"));
 const viewMode = useViewMode();
 const keybindInfo = useKeybindInfo();
+const route = useRoute();
+const mapPartId = inject(mapPartIdKey);
 
 const movement = useMovementAndResize({
     dimensions: props,
@@ -40,6 +45,7 @@ const movement = useMovementAndResize({
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => {},
     customKeybinds: {
+        "r": rename,
         "q": () => emit("change-category")
     }
 });
@@ -52,6 +58,11 @@ watch(selection.selected, (selected) => {
             keybindInfo.faster,
             keybindInfo.copy,
             {
+                id: "rename_rool",
+                description: "Ändra namn",
+                keys: ["r"]
+            },
+            {
                 id: "change_category",
                 description: "Ändra rumkategori",
                 keys: ["q"]
@@ -59,6 +70,21 @@ watch(selection.selected, (selected) => {
         ];
     }
 });
+
+async function rename() {
+    selection.deselect();
+    const result = await Swal.fire({
+        title: "Ändra namn",
+        text: "Skriv det nya namnet på rummet",
+        input: "text",
+        inputValue: props.name ?? "",
+        showCancelButton: true
+    });
+    const name = result.value as string;
+    if (name) {
+        emit("change", "name", name);
+    }
+}
 
 </script>
 

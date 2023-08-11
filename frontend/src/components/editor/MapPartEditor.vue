@@ -125,7 +125,7 @@ function updatePoint(pointId: number, property: keyof Position, value: number) {
     saveWithDebounce();
 }
 
-function updateRoom(roomId: number, property: DimensionsProperty, value: number) {
+function updateRoom<T extends keyof Room>(roomId: number, property: T, value: Room[T]) {
     // Find the room
     const room = data.value?.rooms.find(room => room.id === roomId);
     if (!room) return;
@@ -304,7 +304,7 @@ async function connectStaircases(idA: number, idB: number) {
                 v-if="selectedRoom"
                 :room="selectedRoom"
                 :room-categories="roomCategories"
-                :show-navigate-button="false"
+                :show-buttons="false"
             />
         </template>
         <template #panzoom>

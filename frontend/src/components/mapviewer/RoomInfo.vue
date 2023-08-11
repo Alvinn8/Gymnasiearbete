@@ -9,9 +9,9 @@ import StarIcon from "../StarIcon.vue";
 const props = withDefaults(defineProps<{
     room: Room;
     roomCategories: RoomCategory[];
-    showNavigateButton?: boolean;
+    showButtons?: boolean;
 }>(), {
-    showNavigateButton: true // default value
+    showButtons: true // default value
 });
 
 const emit = defineEmits<{
@@ -49,38 +49,39 @@ function redirectToLogin() {
         <StarIcon :fill="true" />
         <span class="ms-2">Favorit</span>
     </p>
-    <button
-        v-if="showNavigateButton"
-        class="btn btn-primary me-2"
-        @click="emit('pathfind')"
-    >Hitta hit</button>
-    <template v-if="auth.isLoggedIn">
+    <template v-if="showButtons">
         <button
-            v-if="!isFavorite"
-            class="btn btn-success"
-            @click="favoriteRooms.markAsFavorite(room)"
-        >Favoritmarkera</button>
-        <button
-            v-else
-            class="btn btn-secondary"
-            @click="favoriteRooms.unmarkAsFavorite(room)"
-        >Ta bort som favorit</button>
-    </template>
-    <template v-else>
+            class="btn btn-primary me-2"
+            @click="emit('pathfind')"
+        >Hitta hit</button>
+        <template v-if="auth.isLoggedIn">
+            <button
+                v-if="!isFavorite"
+                class="btn btn-success"
+                @click="favoriteRooms.markAsFavorite(room)"
+            >Favoritmarkera</button>
+            <button
+                v-else
+                class="btn btn-secondary"
+                @click="favoriteRooms.unmarkAsFavorite(room)"
+            >Ta bort som favorit</button>
+        </template>
+        <template v-else>
+            <div class="mb-3"></div>
+            <button class="btn btn-secondary" @click="redirectToLogin">Logga in för att favoritmarkera</button>
+        </template>
         <div class="mb-3"></div>
-        <button class="btn btn-secondary" @click="redirectToLogin">Logga in för att favoritmarkera</button>
+        <div class="btn-group" role="group">
+            <button
+                class="btn btn-secondary"
+                @click="emit('create-link')"
+            >Skapa länk</button>
+            <button
+                class="btn btn-secondary"
+                @click="emit('create-qr-code')"
+            >Skapa QR-kod</button>
+        </div>
     </template>
-    <div class="mb-3"></div>
-    <div class="btn-group" role="group">
-        <button
-            class="btn btn-secondary"
-            @click="emit('create-link')"
-        >Skapa länk</button>
-        <button
-            class="btn btn-secondary"
-            @click="emit('create-qr-code')"
-        >Skapa QR-kod</button>
-    </div>
 </template>
 
 <style scoped>

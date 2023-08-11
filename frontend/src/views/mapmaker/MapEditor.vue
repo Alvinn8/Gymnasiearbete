@@ -267,10 +267,20 @@ async function changePublicStatus(isPublic: boolean) {
     <div class="keybinds_info">
         <KeybindsInfo />
     </div>
+    <div class="reserved-space"></div>
 </template>
 
 <style scoped>
 input {
     max-width: 80px;
+}
+.keybinds_info {
+    position: fixed;
+    bottom: 0px;
+    background-color: white;
+    padding: 5px;
+}
+.reserved-space {
+    margin-bottom: 10px;
 }
 </style>
