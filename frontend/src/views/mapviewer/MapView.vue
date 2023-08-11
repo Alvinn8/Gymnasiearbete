@@ -463,6 +463,7 @@ function getRoomAsQueryString(room: Room) {
                     v-model="searchPrompt"
                     :show-back-arrow="showSearchSuggestions"
                     :prefix="selectRoomCallback?.text"
+                    autoFocus
                     @focus="showSearchSuggestions = true"
                     @back="stopPathfinding"
                 />

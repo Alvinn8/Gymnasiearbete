@@ -1,9 +1,14 @@
 <script setup lang="ts">
-defineProps<{
+import { onMounted, ref } from "vue";
+
+const props = withDefaults(defineProps<{
     modelValue: string;
     showBackArrow: boolean;
     prefix?: string;
-}>();
+    autoFocus?: boolean;
+}>(), {
+    autoFocus: false
+});
 
 const emit = defineEmits<{
     (e: "update:modelValue", value: string): void;
@@ -11,6 +16,15 @@ const emit = defineEmits<{
     (e: "blur"): void;
     (e: "back"): void;
 }>();
+
+const inputRef = ref<HTMLInputElement | null>(null);
+
+onMounted(() => {
+    if (props.autoFocus) {
+        inputRef.value?.focus();
+    }
+});
+
 </script>
 
 <template>
@@ -31,6 +45,7 @@ const emit = defineEmits<{
             type="text"
             placeholder="Sök"
             :value="modelValue"
+            ref="inputRef"
             @input="(e) => emit('update:modelValue', (e.target as HTMLInputElement).value)"
             @focus="emit('focus')"
             @blur="emit('blur')"
