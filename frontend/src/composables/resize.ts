@@ -31,7 +31,7 @@ export default function useResize({
 
     // Keyboard shortcuts
 
-    function handleKeyPress(e: KeyboardEvent) {
+    function handleKeyDown(e: KeyboardEvent) {
         e.preventDefault();
     
         let distance = MOVEMENT_GRID_DISTANCE;
@@ -67,14 +67,14 @@ export default function useResize({
 
     watch(selection.selected, (newValue) => {
         if (newValue) {
-            document.body.addEventListener("keypress", handleKeyPress);
+            document.body.addEventListener("keydown", handleKeyDown);
         } else {
-            document.body.removeEventListener("keypress", handleKeyPress);
+            document.body.removeEventListener("keydown", handleKeyDown);
         }
     }, { immediate: true });
 
     onUnmounted(() => {
-        document.body.removeEventListener("keypress", handleKeyPress);
+        document.body.removeEventListener("keydown", handleKeyDown);
     });
 
     return {

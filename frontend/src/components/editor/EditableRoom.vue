@@ -9,7 +9,7 @@ import PointConnection from "./PointConnection.vue";
 import Swal from "sweetalert2";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
-
+import { apiPost, errorHandler } from "@/api/api";
 
 const props = defineProps<{
     id: number;
@@ -31,6 +31,10 @@ const emit = defineEmits<{
      * Called when the user wishes to change the category of the room.
      */
     (e: "change-category"): void;
+    /**
+     * Called when the room is deleted.
+     */
+    (e: "delete"): void;
 }>();
 
 const selection = useSelection("room", toRef(props, "id"));
@@ -44,6 +48,7 @@ const movement = useMovementAndResize({
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => {},
+    onDelete: deleteRoom,
     customKeybinds: {
         "r": rename,
         "q": () => emit("change-category")
@@ -66,6 +71,11 @@ watch(selection.selected, (selected) => {
                 id: "change_category",
                 description: "Ändra rumkategori",
                 keys: ["q"]
+            },
+            {
+                id: "delete_room",
+                description: "Radera rum",
+                keys: ["Backspace", "Delete"]
             }
         ];
     }
@@ -84,6 +94,20 @@ async function rename() {
     if (name) {
         emit("change", "name", name);
     }
+}
+
+async function deleteRoom() {
+    return apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/room/delete`, {
+        id: props.id
+    }).then(() => {
+        selection.deselect();
+        emit("delete");
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            icon: "error",
+            title: json.error
+        })]
+    ]));
 }
 
 </script>

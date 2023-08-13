@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { apiPost, handleError } from "@/api/api";
+import { apiPost, errorHandler, handleError } from "@/api/api";
 import useMovement from "@/composables/movement";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
@@ -29,6 +29,11 @@ const emit = defineEmits<{
      */
     (e: "copy", point: Point): void;
 
+    /**
+     * Called when the point is deleted.
+     */
+    (e: "delete"): void;
+
     /** Called when the point is clicked. */
     (e: "click"): void;
 
@@ -54,6 +59,7 @@ const movement = useMovement({
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => copyPoint(),
+    onDelete: () => deletePoint(),
     customKeybinds: {
         "r": async () => {
             selection.deselect();
@@ -144,6 +150,20 @@ async function extrudePoint() {
     pointSelection.select(point.id);
 }
 
+function deletePoint() {
+    return apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/point/delete`, {
+        id: props.id
+    }).then(() => {
+        selection.deselect();
+        emit("delete");
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            icon: "error",
+            title: json.error
+        })]
+    ]));
+}
+
 watch(selection.selected, (selected) => {
     if (selected) {
         keybindInfo.groups = [
@@ -164,6 +184,11 @@ watch(selection.selected, (selected) => {
                 id: "extrude",
                 description: "Utvidga väg",
                 keys: ["e"]
+            },
+            {
+                id: "delete_point",
+                description: "Radera punkt",
+                keys: ["Backspace", "Delete"]
             }
         ];
     }

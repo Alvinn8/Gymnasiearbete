@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { apiPost, handleError } from "@/api/api";
+import { apiPost, errorHandler, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
 import { useSelection } from "@/stores/selection";
@@ -8,6 +8,7 @@ import type { Staircase } from "@/types";
 import { inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
+import Swal from "sweetalert2";
 
 const props = defineProps<{
     id: number;
@@ -34,6 +35,11 @@ const emit = defineEmits<{
      * Called when two staircases are connected.
      */
     (e: "connect", idA: number, idB: number): void;
+
+    /**
+     * Called when a staircase is deleted.
+     */
+    (e: "delete"): void;
 }>();
 
 const selection = useSelection("staircase", toRef(props, "id"));
@@ -48,6 +54,7 @@ const movement = useMovementAndResize({
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => copyStaircase(),
+    onDelete: () => deleteStaircase(),
     customKeybinds: {
         "r": () => {
             const newRotation = (props.rotationDeg + 90) % 360;
@@ -77,6 +84,21 @@ async function copyStaircase() {
 
     staircaseSelection.select(staircase.id);
 }
+
+function deleteStaircase() {
+    return apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/staircase/delete`, {
+        id: props.id
+    }).then(() => {
+        selection.deselect();
+        emit("delete");
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            icon: "error",
+            title: json.error
+        })]
+    ]));
+}
+
 watch(selection.selected, (selected) => {
     if (selected) {
         keybindInfo.groups = [
@@ -87,6 +109,11 @@ watch(selection.selected, (selected) => {
                 id: "rotate",
                 keys: ["r"],
                 description: "Rotera"
+            },
+            {
+                id: "delete_staircase",
+                description: "Radera trappa",
+                keys: ["Backspace", "Delete"]
             }
         ];
     }

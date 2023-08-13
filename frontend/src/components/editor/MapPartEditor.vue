@@ -324,6 +324,7 @@ async function connectStaircases(idA: number, idB: number) {
                     :width="wall.width" :height="wall.height"
                     @change="(property, value) => updateWall(wall.id, property, value)"
                     @copy="(wall) => data && data.walls.push(wall)"
+                    @delete="() => data && data.walls.splice(data.walls.indexOf(wall), 1)"
                 />
                 <!-- Render points. -->
                 <EditablePoint
@@ -336,6 +337,7 @@ async function connectStaircases(idA: number, idB: number) {
                     :is-room-point="Boolean(data.rooms.find(room => room.doorAtPointId === point.id))"
                     @change="(property, value) => updatePoint(point.id, property, value)"
                     @copy="(point) => data && data.points.push(point)"
+                    @delete="() => data && data.points.splice(data.points.indexOf(point), 1)"
                     @click="() => connectionManager.clickPoint(point, mapPartId)"
                     @right-click="(e) => connectionManager.rightClickPoint(e, point, mapPartId)"
                     @new-room="(room) => data && data.rooms.push(room)"
@@ -373,6 +375,7 @@ async function connectStaircases(idA: number, idB: number) {
                     :has-category="Boolean(room.categoryId)"
                     @change="(property, value) => updateRoom(room.id, property, value)"
                     @change-category="changeRoomCategory(room)"
+                    @delete="() => data && data.rooms.splice(data.rooms.indexOf(room), 1)"
                 />
                 <!-- Render staircases -->
                 <EditableStaircase
@@ -388,6 +391,7 @@ async function connectStaircases(idA: number, idB: number) {
                     @change="(property, value) => updateStaircase(staircase.id, property, value)"
                     @copy="(staircase) => data && data.staircases.push(staircase)"
                     @connect="connectStaircases"
+                    @delete="() => data && data.staircases.splice(data.staircases.indexOf(staircase), 1)"
                 />
                 <!-- Draw the line for forming new connections. -->
                 <PointConnection
@@ -421,7 +425,7 @@ async function connectStaircases(idA: number, idB: number) {
 <style scoped>
 .important-warning {
     position: fixed;
-    bottom: 30px;
+    bottom: 50px;
     left: 50%;
     transform: translate(-50%);
     border-width: 5px;

@@ -50,6 +50,7 @@ def edit_staircase(jwt, map_id, part_id):
         "success": True
     }
 
+
 @app.route("/api/map/<map_id>/staircase/connect", methods=["POST"])
 @map_access_required
 def connect_staircase(jwt, map_id):
@@ -68,6 +69,27 @@ def connect_staircase(jwt, map_id):
     cur.execute(
         "UPDATE Staircase SET connects_to = ? WHERE id = ?",
         (id_b, id_a)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
+    }
+
+
+@app.route("/api/map/<map_id>/part/<part_id>/staircase/delete", methods=["POST"])
+@map_part_required
+def delete_staircase(jwt, map_id, part_id):
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    staircase_id = request.json["id"]
+    cur.execute(
+        "DELETE FROM Staircase WHERE id = ? AND map_part_id = ?",
+        (staircase_id, part_id)
     )
 
     conn.commit()

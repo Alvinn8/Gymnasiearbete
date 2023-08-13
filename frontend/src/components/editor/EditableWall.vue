@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { apiPost, handleError } from "@/api/api";
+import { apiPost, errorHandler, handleError } from "@/api/api";
 import { useMovementAndResize } from "@/composables/resize";
 import { DEFAULT_WALL_WIDTH } from "@/constants";
 import { useKeybindInfo } from "@/stores/keybindsInfo";
@@ -9,6 +9,7 @@ import type { DimensionsProperty, Wall } from "@/types";
 import { inject, toRef, watch } from "vue";
 import { useRoute } from "vue-router";
 import { mapPartIdKey } from "../keys";
+import Swal from "sweetalert2";
 
 const props = defineProps<{
     id: number;
@@ -28,6 +29,11 @@ const emit = defineEmits<{
      * Called when the user presses a key to copy the wall.
      */
     (e: "copy", wall: Wall): void;
+
+    /**
+     * Called when the wall is deleted.
+     */
+    (e: "delete"): void;
 }>();
 
 const mapPartId = inject(mapPartIdKey);
@@ -43,6 +49,7 @@ const movement = useMovementAndResize({
     selection: selection,
     onChange: (property, value) => emit("change", property, value),
     onCopy: () => copyWall(),
+    onDelete: () => deleteWall(),
     customKeybinds: {
         "q": () => {
             if (props.width <= props.height) {
@@ -74,6 +81,20 @@ async function copyWall() {
     wallSelection.select(wall.id);
 }
 
+function deleteWall() {
+    return apiPost(`map/${route.params.map_id}/part/${mapPartId!.value}/wall/delete`, {
+        id: props.id
+    }).then(() => {
+        selection.deselect();
+        emit("delete");
+    }).catch(errorHandler([
+        [json => !json.success, (json: any) => Swal.fire({
+            icon: "error",
+            title: json.error
+        })]
+    ]));
+}
+
 watch(selection.selected, (selected) => {
     if (selected) {
         keybindInfo.groups = [
@@ -85,6 +106,11 @@ watch(selection.selected, (selected) => {
                 id: "normalize_wall_size",
                 description: "Normalisera väggstorlek",
                 keys: ["q"]
+            },
+            {
+                id: "delete_wall",
+                description: "Radera vägg",
+                keys: ["Backspace", "Delete"]
             }
         ];
     }

@@ -46,3 +46,24 @@ def edit_wall(jwt, map_id, part_id):
     return {
         "success": True
     }
+
+
+@app.route("/api/map/<map_id>/part/<part_id>/wall/delete", methods=["POST"])
+@map_part_required
+def delete_wall(jwt, map_id, part_id):
+
+    conn = create_connection()
+    cur = conn.cursor()
+
+    wall_id = request.json["id"]
+    cur.execute(
+        "DELETE FROM Wall WHERE id = ? AND map_part_id = ?",
+        (wall_id, part_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True
+    }

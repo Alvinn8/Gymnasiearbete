@@ -19,6 +19,8 @@ export type UseMovementArguments = {
     onChange(property: keyof Position, value: number): void
     /** Called when the object is copied. */
     onCopy(): void;
+    /** Called when the object is deleted. */
+    onDelete?(): void;
     /** The selection to use. */
     selection: SelectionWithId;
     /** An object containing custom keybind logic. */
@@ -31,7 +33,7 @@ export type UseMovementArguments = {
  * A Vue.js composeable for sharing movement logic between components.
  */
 export default function useMovement({
-    dimensions, onChange, onCopy, customKeybinds, selection
+    dimensions, onChange, onCopy, onDelete, customKeybinds, selection
 }: UseMovementArguments) {
 
     // Drag to move
@@ -77,7 +79,7 @@ export default function useMovement({
 
     // Keyboard shortcuts
 
-    function handleKeyPress(e: KeyboardEvent) {
+    function handleKeyDown(e: KeyboardEvent) {
         e.preventDefault();
     
         let distance = 1;
@@ -97,6 +99,11 @@ export default function useMovement({
 
         // Copying the object
         case "c": onCopy(); break;
+        
+        case "backspace":
+        case "delete":
+            onDelete?.();
+            break;
         }
 
         if (customKeybinds) {
@@ -107,14 +114,14 @@ export default function useMovement({
 
     watch(selection.selected, (newValue) => {
         if (newValue) {
-            document.body.addEventListener("keypress", handleKeyPress);
+            document.body.addEventListener("keydown", handleKeyDown);
         } else {
-            document.body.removeEventListener("keypress", handleKeyPress);
+            document.body.removeEventListener("keydown", handleKeyDown);
         }
     }, { immediate: true });
     
     onUnmounted(() => {
-        document.body.removeEventListener("keypress", handleKeyPress);
+        document.body.removeEventListener("keydown", handleKeyDown);
         document.body.removeEventListener("mousemove", mouseMove);
         document.body.removeEventListener("mouseup", mouseUp);
     });
