@@ -175,14 +175,29 @@ async function changeRoomCategory(room: Room) {
     }
 }
 
+let pendingSave = ref<(() => Promise<void>) | null>(null);
+
+onUnmounted(async () => {
+    if (pendingSave.value) {
+        await pendingSave.value();
+    }
+});
+
 function saveWithDebounce() {
 
     // Use debounce to only update when no changes are being made to avoid spamming
     // updates for every small movement.
 
     if (pendingChangesId) clearTimeout(pendingChangesId);
+
+    pendingSave.value = saveInstantly;
+
     pendingChangesId = setTimeout(async () => {
-        
+        await saveInstantly();
+        pendingSave.value = null;
+    }, 5000) as unknown as number;
+    
+    async function saveInstantly() {
         // If walls have been changed
         if (changedWalls.size > 0) {
             // Write the changes to the database
@@ -226,7 +241,7 @@ function saveWithDebounce() {
 
         // Log
         console.log("%c ✔ Saved", "color: green;");
-    }, 5000) as unknown as number;
+    }
 }
 
 function beforeUnload(e: BeforeUnloadEvent) {
