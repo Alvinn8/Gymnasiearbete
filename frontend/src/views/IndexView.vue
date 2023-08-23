@@ -20,13 +20,14 @@ apiGet("map/get_featured_map")
         <div class="row vh-100">
             <div class="col-lg align-self-center">
                 <h1>Kartor för byggnader</h1>
-                <RouterLink to="/register" class="btn btn-primary">Skapa egna kartor</RouterLink>
-            </div>
-            <div v-if="featuredMap" class="col align-self-center">
                 <RouterLink
+                    v-if="featuredMap"
                     :to="{ name: 'view-map', params: { map_id: featuredMap.id } }"
                     class="btn btn-primary"
                 >Hitta på {{ featuredMap.name }}</RouterLink>
+            </div>
+            <div class="col align-self-center">
+                <RouterLink to="/register" class="btn btn-primary">Skapa egna kartor</RouterLink>
             </div>
         </div>
     </div>
